@@ -1,0 +1,176 @@
+.custom-lightbox-modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+}
+.custom-lightbox-modal.open {
+    display: flex;
+    animation: fadeIn 0.25s ease;
+}
+
+.lightbox-content-wrap {
+    max-width: 90%;
+    max-height: 90vh;
+    display: flex !important;
+    flex-direction: column !important; /* Bắt buộc xếp dọc: Ảnh ở trên, Tiêu đề ở dưới */
+    align-items: center !important;
+    justify-content: center;
+    position: relative;
+}
+
+#lightboxTargetImg {
+    max-width: 100%;
+    max-height: 92vh; /* Giảm nhẹ chiều cao ảnh để nhường chỗ cho thanh tiêu đề bên dưới */
+    border-radius: 6px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    object-fit: contain;
+}
+
+.lightbox-info-bar {
+    margin-top: 12px;
+    color: #ffffff;
+    font-size: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 8px 20px;
+    border-radius: 20px;
+    min-width: 280px; /* Độ rộng tối thiểu cho thanh tiêu đề */
+    max-width: 100%;
+}
+.lightbox-counter {
+    font-size: 13px;
+    opacity: 0.8;
+    margin-left: 15px;
+    font-family: monospace;
+}
+.lightbox-close-btn {
+    position: absolute;
+    top: 20px; right: 25px;
+    color: #ffffff;
+    font-size: 38px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 100001;
+    line-height: 1;
+}
+.lightbox-nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border: none;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    z-index: 100000;
+}
+.lightbox-nav-btn:hover {
+    background: rgba(255, 255, 255, 0.4);
+}
+.prev-btn { left: 20px; }
+.next-btn { right: 20px; }
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* ---------- MASONRY GALLERY (TỰ ĐỘNG GIỮ NGUYÊN RATIO ẢNH) ---------- */
+.masonry-gallery-grid {
+  column-count: 3;          /* Hiển thị 4 cột trên Desktop */
+  column-gap: 16px;         /* Khoảng cách giữa các cột */
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .masonry-gallery-grid { column-count: 3; } /* Tablet lớn: 3 cột */
+}
+@media (max-width: 768px) {
+  .masonry-gallery-grid { column-count: 2; column-gap: 12px; } /* Mobile/Tablet nhỏ: 2 cột */
+}
+@media (max-width: 480px) {
+  .masonry-gallery-grid { column-count: 1; } /* Mobile nhỏ: 1 cột */
+}
+
+.masonry-item {
+  break-inside: avoid;      /* Chống vỡ/cắt đôi ảnh giữa các cột */
+  margin-bottom: 16px;      /* Khoảng cách xô xệch giữa các ảnh xếp dọc */
+  cursor: pointer;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.masonry-thumb-wrap {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+  background: var(--paper-2);
+}
+
+.masonry-img {
+  width: 100%;
+  height: auto;             /* Giữ nguyên 100% tỉ lệ ảnh đại diện thực tế */
+  display: block;
+  transition: transform 0.35s ease, filter 0.35s ease;
+}
+
+/* Hiệu ứng Hover nổi bật */
+.masonry-item:hover .masonry-img {
+  transform: scale(1.04);
+  filter: brightness(1.05);
+}
+
+.masonry-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0.1) 60%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 16px;
+  color: #ffffff;
+  opacity: 0.85;
+  transition: opacity 0.25s ease;
+}
+
+.masonry-item:hover .masonry-overlay {
+  opacity: 1;
+}
+
+.masonry-overlay i {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 18px;
+  color: #ffffff;
+  opacity: 0;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  transform: scale(0.8);
+}
+
+.masonry-item:hover .masonry-overlay i {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.masonry-overlay span {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+}

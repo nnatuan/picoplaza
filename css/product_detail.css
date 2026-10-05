@@ -1,0 +1,298 @@
+/* Bố cục 1 cột duy nhất full độ rộng 1180px */
+  .detail-container {
+    max-width: 1180px;
+    margin: 30px auto;
+    padding: 0 30px;
+  }
+  
+  @media (max-width: 640px) {
+    .detail-container { 
+      padding: 0 20px; 
+      margin: 20px auto;
+    }
+  }
+
+  .detail-main {
+    background: var(--card);
+    width: 100%;
+  }
+  
+  .detail-meta-top {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+
+  .cat-badge {
+    background: var(--paper-3);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: var(--radius);
+  }
+
+  .status-badge {
+    background: #10b981;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: var(--radius);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .detail-main h1 {
+    font-size: clamp(24px, 3.5vw, 34px);
+    line-height: 1.25;
+    margin-bottom: 16px;
+    color: var(--text);
+    word-wrap: break-word; 
+    overflow-wrap: break-word;
+    font-weight: 700;
+  }
+
+  .detail-location {
+    font-size: 15px;
+    color: var(--text-soft);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 28px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .detail-location i { color: var(--primary-red); }
+
+  /* Ảnh đại diện sản phẩm */
+  .detail-gallery {
+    width: 100%;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--line);
+    margin-bottom: 30px;
+    background: var(--paper-2);
+  }
+
+  .detail-gallery img {
+    width: 100%;
+    height: auto;
+    max-height: 520px;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* Grid Thông số Core BĐS + Cụm liên hệ nhanh */
+  .detail-specs-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    background: var(--paper-2);
+    border: 1px solid var(--line);
+    padding: 20px 24px;
+    margin-bottom: 40px;
+    border-radius: 4px;
+    flex-wrap: wrap;
+  }
+
+  .detail-specs-grid {
+    display: flex;
+    align-items: center;
+    gap: 36px;
+    flex-wrap: wrap;
+  }
+
+  .spec-item .label {
+    font-size: 11.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .spec-item .val {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text);
+  }
+  
+  .spec-item .val.price-color {
+    color: var(--primary-red);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 24px;
+  }
+
+  .btn-contact-phone-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--primary-red);
+    color: #ffffff !important;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 800;
+    border-radius: 4px;
+    transition: background 0.15s ease, transform 0.15s ease;
+    text-decoration: none !important;
+  }
+
+  .btn-contact-phone-inline:hover {
+    background: var(--primary-red-deep);
+    transform: translateY(-1px);
+  }
+
+  /* Khối Content mô tả chi tiết */
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid var(--accent-orange);
+    display: inline-block;
+  }
+
+  .detail-content-text {
+    font-size: 15.5px;
+    line-height: 14px;
+    color: var(--text);
+    margin-bottom: 44px;
+    white-space: pre-line;
+  }
+
+  /* Phân khu tài liệu */
+  .doc-section { 
+    margin-bottom: 44px; 
+    background: var(--card); 
+    border: 1px solid var(--line); 
+    padding: 24px; 
+    border-radius: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .doc-category-group { 
+    margin-bottom: 20px;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .doc-list { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    display: grid; 
+    gap: 10px;
+    width: 100%;
+  }
+
+  .doc-item {  
+    display: flex;  
+    justify-content: space-between;  
+    align-items: center;  
+    padding: 12px 16px;  
+    background: var(--paper-2);  
+    border: 1px solid var(--line);  
+    border-radius: 4px;  
+    gap: 16px; 
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  .doc-info {  
+    display: flex;  
+    align-items: center;  
+    gap: 10px;  
+    font-size: 14px;  
+    font-weight: 600;  
+    flex: 1;
+    min-width: 0;
+  }
+
+  .doc-info span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+    width: 100%;
+    min-width: 0;
+    word-break: break-all;
+  }
+
+  .doc-info i {  
+    color: var(--primary-red);  
+    flex-shrink: 0; 
+  }
+  
+  .doc-actions-wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .doc-category-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-soft);
+    letter-spacing: 0.05em;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .badge-level { 
+    font-size: 10.5px; 
+    padding: 2px 6px; 
+    font-weight: 700; 
+    border-radius: 2px; 
+    text-transform: uppercase; 
+  }
+  .badge-level.pub { background: var(--paper-3); color: var(--text-soft); }
+  .badge-level.cust { background: #e0f2fe; color: #0369a1; }
+  .badge-level.sec { background: #fee2e2; color: #b91c1c; }
+  
+  .btn-download-doc { 
+    font-size: 13px; 
+    font-weight: 700; 
+    color: var(--text); 
+    border: 1px solid var(--line); 
+    padding: 5px 12px; 
+    background: var(--card); 
+    transition: all 0.15s; 
+    border-radius: 2px;
+  }
+  .btn-download-doc:hover { 
+    background: var(--primary-red); 
+    color: #fff; 
+    border-color: var(--primary-red); 
+  }
+
+  /* Khối Map Iframe */
+  .detail-map-wrap {
+    margin-bottom: 44px;
+  }
+
+  .detail-map-wrap iframe {
+    width: 100% !important;
+    height: 380px !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 4px;
+  }
+
+  /* Related Listings */
+  .relate-section {
+    background: var(--paper-2);
+    padding: 64px 0;
+    border-top: 1px solid var(--line);
+  }
+  .relate-head { font-size: 24px; margin-bottom: 28px; text-align: center; font-weight: 700; }
+  .relate-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+  @media (max-width:850px) { .relate-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width:580px) { .relate-grid { grid-template-columns: 1fr; } }

@@ -1,0 +1,185 @@
+.fab-wrapper {
+  position: fixed;
+  bottom: 15px;
+  right: 16px;
+  z-index: 9999999;
+}
+#fabCheckbox {
+  display: none;
+}
+
+/* Wheel container */
+.fab-wheel {
+  position: absolute;
+  bottom: 60px; /* Nằm ngay trên nút chính FAB */
+  right: 0;
+  display: flex;
+  flex-direction: column-reverse; /* Item 1 ở dưới cùng, Item 4 ở trên cùng */
+  align-items: flex-end; /* Gióng thẳng hàng các nút tròn bên phải */
+  gap: 12px;
+  pointer-events: none;
+}
+
+.fab-checkbox:checked ~ .fab-wheel {
+  pointer-events: auto;
+}
+
+/* Định dạng từng hàng Item */
+.fab-wheel .fab-action {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  text-decoration: none;
+  opacity: 0;
+  transform: translateY(15px) scale(0.8);
+  transition: all 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+  white-space: nowrap;
+}
+
+/* Hiệu ứng xuất hiện khi bật Checkbox */
+.fab-checkbox:checked ~ .fab-wheel .fab-action {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* Độ trễ hiệu ứng bật ra */
+.fab-checkbox:checked ~ .fab-wheel .fab-action:nth-child(1) { transition-delay: 0.05s; }
+.fab-checkbox:checked ~ .fab-wheel .fab-action:nth-child(2) { transition-delay: 0.1s; }
+.fab-checkbox:checked ~ .fab-wheel .fab-action:nth-child(3) { transition-delay: 0.15s; }
+.fab-checkbox:checked ~ .fab-wheel .fab-action:nth-child(4) { transition-delay: 0.2s; }
+
+/* Nhãn chữ (Title) */
+.fab-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 6px 12px;
+  border-radius: 6px;
+  margin-right: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  line-height: 1.2;
+}
+
+/* Nút icon tròn - Đồng bộ background màu Zalo */
+.fab-button {
+  width: 45px;
+  height: 45px;
+  min-width: 45px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: #0088FF; /* Màu xanh Zalo chuẩn */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+}
+
+/* Override toàn bộ màu nút con về đồng bộ Zalo */
+.fab-wheel .fab-action .fab-button {
+  background: #0088FF !important;
+}
+
+/* Class hiển thị icon Zalo từ tệp images/zalo.svg */
+.icon-cps-chat-zalo {
+  width: 100%;
+  height: 100%;
+  display: inline-block;
+  background: url(images/zalo.svg) center center / contain no-repeat !important;
+}
+
+/* Nút kích hoạt chính (Trigger FAB) */
+.fab {
+  cursor: pointer;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0;
+  border-radius: 50%;
+  background: #0088FF;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  z-index: 1000;
+  transition: transform 0.25s cubic-bezier(0.15, 0.87, 0.45, 1.23);
+}
+
+.fab-checkbox:checked ~ .fab {
+  transform: rotate(135deg); /* Xoay mở rộng icon thành nút đóng */
+  transform: rotate(360deg);
+}
+
+/* Icon chính trên nút FAB gốc */
+.fab-wrapper .icon-cps-fab-menu {
+  width: 100%;
+  height: 100%;
+  display: inline-block;
+  background: url(images/zalo.svg) center center / contain no-repeat !important;
+}
+
+/* Overlay nền tối */
+.header-overlay-2 {
+  visibility: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999999;
+  opacity: 0;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.fab-checkbox:checked ~ .header-overlay-2,
+.header-overlay-2.active {
+  visibility: visible;
+  opacity: 1;
+}
+
+/* Nút Scroll to Top xếp trên nút Zalo */
+#btn-scroll-top {
+    position: fixed;
+    bottom: 85px;
+    right: 20px;
+    z-index: 9999;
+    width: 42px;
+    height: 42px;
+    background-color: #1e293b; /* Tone màu tối sang trọng */
+    color: #ffffff;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease-in-out;
+}
+
+#btn-scroll-top:hover {
+    background-color: #b65c38; /* Mối màu cam/đỏ theo tone chủ đạo PICO */
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Class kích hoạt hiển thị khi scroll xuống */
+#btn-scroll-top.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Tùy chỉnh nhỏ cho Mobile để tránh chiếm diện tích */
+@media (max-width: 768px) {
+    #btn-scroll-top {
+        width: 38px;
+        height: 38px;
+        bottom: 75px;
+        right: 15px;
+        font-size: 14px;
+    }
+}
