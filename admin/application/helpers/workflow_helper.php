@@ -56,7 +56,7 @@ if (!function_exists('get_department_by_id')) {
 }
 
 if (!function_exists('workflow_submit_document')) {
-    function workflow_submit_document($data)
+    function workflow_submit_document($data, $send_notify = true)
     {
         $ci =& get_instance();
         $ci->load->database();
@@ -137,8 +137,10 @@ if (!function_exists('workflow_submit_document')) {
             'Khách hàng đã nộp hồ sơ thẩm định thành công. Đang chờ các phòng ban thẩm định.'
         );
 
-        // Bắn thông báo Telegram & Mailjet
-        workflow_notify_new_submission($submission_id, $code, $data['ccustomer_name'], $doc_type['cname']);
+        // Bắn thông báo Telegram & Mailjet nếu bật notify đồng bộ
+        if ($send_notify) {
+            workflow_notify_new_submission($submission_id, $code, $data['ccustomer_name'], $doc_type['cname']);
+        }
 
         return $code;
     }

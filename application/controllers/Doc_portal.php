@@ -162,11 +162,11 @@ class Doc_portal extends CI_Controller
             'cfile_path'      => $uploaded_file_path
         );
 
-        $doc_code = workflow_submit_document($submit_data);
+        $doc_code = workflow_submit_document($submit_data, false); // false để AJAX chạy ngầm thông báo, không làm chậm quá trình submit
 
         if ($doc_code) {
             $_SESSION['doc_flash_success'] = 'Hồ sơ mã #' . $doc_code . ' đã được gửi thẩm định thành công!';
-            redirect(base_url() . 'doc_portal/track/' . $doc_code);
+            redirect(base_url() . 'doc_portal/track/' . $doc_code . '?just_submitted=1');
         } else {
             $_SESSION['doc_flash_error'] = 'Lỗi hệ thống trong quá trình gửi hồ sơ. Vui lòng liên hệ hỗ trợ!';
             redirect(base_url() . 'doc_portal/submit/' . $doc_type_id);
@@ -217,5 +217,37 @@ class Doc_portal extends CI_Controller
         $data['logs']        = get_doc_logs($submission['nid']);
 
         $this->load->view('doc_portal/track', $data);
+    }
+
+    /**
+     * AJAX ngầm gửi thông báo Telegram & Email khi nộp hồ sơ thành công
+     */
+    function ajax_send_notifications($code = '')
+    {
+        // Tắt session lock sớm để không block các request khác
+        if (session_status() == PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
+
+        $code = trim($code);
+        if (empty($code)) {
+            echo json_encode(array('status' => false, 'message' => 'Mã hồ sơ trống'));
+            return;
+        }
+
+        $submission = get_doc_submission_by_code($code);
+        if (empty($submission)) {
+            echo json_encode(array('status' => false, 'message' => 'Hồ sơ không tồn tại'));
+            return;
+        }
+
+        // Thực thi gửi thông báo Telegram & Email
+        if (function_exists('workflow_notify_new_submission')) {
+            workflow_notify_new_submission($submission['nid'], $submission['ccode'], $submission['ccustomer_name'], $submission['doc_type_name']);
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('status' => true, 'message' => 'Đã gửi thông báo Telegram & Email thành công', 'code' => $code));
+        exit();
     }
 }

@@ -1749,14 +1749,21 @@ function send_telegram_core($chat_id, $message_text)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+    curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+    curl_setopt($ch, CURLOPT_DNS_CACHE_TIMEOUT, 600);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 6);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     
     $response = @curl_exec($ch);
     $curl_err = @curl_error($ch);
+    $http_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
     @curl_close($ch);
     
     $res_arr = !empty($response) ? json_decode($response, true) : null;
+    
+    // Ghi log kiểm tra hoạt động Telegram
+    $log_line = date('Y-m-d H:i:s') . " | ChatID: " . $chat_id . " | HTTP: " . $http_code . " | Response: " . (!empty($response) ? trim($response) : $curl_err) . "\n";
+    @file_put_contents(FCPATH . 'telegram_debug.log', $log_line, FILE_APPEND);
     
     // TỰ ĐỘNG XỬ LÝ KHI GROUP ĐƯỢC NÂNG CẤP LÊN SUPERGROUP (MIGRATE TO CHAT ID)
     if (!empty($res_arr) && empty($res_arr['ok'])) {
@@ -1774,10 +1781,16 @@ function send_telegram_core($chat_id, $message_text)
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+            curl_setopt($ch, CURLOPT_DNS_CACHE_TIMEOUT, 600);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 6);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
             $response = @curl_exec($ch);
+            $http_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
             @curl_close($ch);
+            
+            $log_retry = date('Y-m-d H:i:s') . " | RETRY ChatID: " . $retry_id . " | HTTP: " . $http_code . " | Response: " . (!empty($response) ? trim($response) : '') . "\n";
+            @file_put_contents(FCPATH . 'telegram_debug.log', $log_retry, FILE_APPEND);
         }
     }
     

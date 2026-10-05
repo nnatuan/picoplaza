@@ -809,8 +809,10 @@ function send_telegram_core($chat_id, $message_text)
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+    curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+    curl_setopt($ch, CURLOPT_DNS_CACHE_TIMEOUT, 600);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 6);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     
     $response = @curl_exec($ch);
     $curl_err = @curl_error($ch);
@@ -839,8 +841,10 @@ function send_telegram_core($chat_id, $message_text)
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+            curl_setopt($ch, CURLOPT_DNS_CACHE_TIMEOUT, 600);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 6);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 10);
             $response = @curl_exec($ch);
             $http_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
             @curl_close($ch);

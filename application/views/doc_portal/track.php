@@ -365,7 +365,31 @@
     </div>
 </div>
 
+<?php if (isset($_GET['just_submitted']) && $_GET['just_submitted'] == '1'): ?>
+<!-- Background AJAX Notification Trigger: Gửi Telegram & Email ngầm không làm lag trang -->
+<script type="text/javascript">
+(function() {
+    var notifyUrl = '<?php echo base_url("doc_portal/ajax_send_notifications/" . $doc["ccode"]); ?>';
+    if (window.fetch) {
+        fetch(notifyUrl, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        }).then(function(response) {
+            return response.json();
+        }).then(function(res) {
+            console.log('[PICO Notifications] Background dispatched:', res);
+        }).catch(function(err) {
+            console.log('[PICO Notifications] Background error:', err);
+        });
+    } else if (window.jQuery) {
+        jQuery.post(notifyUrl);
+    }
+})();
+</script>
+<?php endif; ?>
+
 <?php 
    $this->load->view('modules/mod_footer'); 
    $this->load->view('footer');
 ?>
+
