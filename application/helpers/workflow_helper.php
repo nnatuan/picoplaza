@@ -492,10 +492,17 @@ if (!function_exists('workflow_notify_new_submission')) {
         }
 
         $admin_url = (strpos(base_url(), '/admin') !== false) ? rtrim(base_url(), '/') : rtrim(base_url(), '/') . '/admin';
+        
+        // Kiểm tra nền tảng thông báo: 1 = Telegram, 0 = Viber (Config nid = 25)
+        $notify_platform = function_exists('get_value_by_config') ? get_value_by_config(25) : (function_exists('get_config_value') ? get_config_value(25) : '1');
+        if ($notify_platform === '' || $notify_platform === null) {
+            $notify_platform = '1';
+        }
+        $notify_platform = (string)trim($notify_platform);
 
-        // 1. GỬI THÔNG BÁO TỚI NHÓM TELEGRAM CỦA TỪNG PHÒNG BAN THẨM ĐỊNH
+        // 1. GỬI THÔNG BÁO TỚI NHÓM CỦA TỪNG PHÒNG BAN THẨM ĐỊNH
         $steps = get_doc_approval_steps($submission_id);
-        if (!empty($steps) && function_exists('send_telegram_core')) {
+        if (!empty($steps)) {
             $sent_groups = array();
             foreach ($steps as $step) {
                 $group_id = !empty($step['ctelegram_group_id']) ? trim($step['ctelegram_group_id']) : '';
@@ -518,24 +525,49 @@ if (!function_exists('workflow_notify_new_submission')) {
                 $dept_msg .= "⏰ <b>Thời gian nộp:</b> " . date('d/m/Y H:i', strtotime($sub['ddate_submit'])) . "\n";
                 $dept_msg .= "⚡ <i>Vui lòng chuyên viên phòng ban đăng nhập CMS Pico Plaza <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a> để thẩm định.</i>";
 
-                send_telegram_core($group_id, $dept_msg);
+                if ($notify_platform === '0' && function_exists('send_viber_core')) {
+                    // Gửi qua Viber Bot
+                    send_viber_core($group_id, $dept_msg);
+                } elseif (function_exists('send_telegram_core')) {
+                    // Mặc định gửi qua Telegram
+                    send_telegram_core($group_id, $dept_msg);
+                }
             }
         }
 
-        // 2. GỬI THÔNG BÁO VÀO NHÓM TELEGRAM BAN QUẢN TRỊ / ADMIN
-        $admin_group_id = function_exists('get_value_by_config') ? get_value_by_config(24) : (function_exists('get_config_value') ? get_config_value(24) : '');
-        if (!empty($admin_group_id) && function_exists('send_telegram_core')) {
-            $admin_msg = "📋 <b>[HỒ SƠ MỚI TIẾP NHẬN — TOÀN HỆ THỐNG]</b>\n";
-            $admin_msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
-            $admin_msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")\n";
-            $admin_msg .= "📄 <b>Loại hồ sơ:</b> " . htmlspecialchars($sub['doc_type_name'], ENT_QUOTES, 'UTF-8') . "\n";
-            $admin_msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
-            $admin_msg .= "⏳ <b>Trạng thái:</b> ĐANG THẨM ĐỊNH SONG SONG\n";
-            $admin_msg .= "⏰ <b>Thời gian:</b> " . date('d/m/Y H:i', strtotime($sub['ddate_submit'])) . "\n";
-            $admin_msg .= "⚡ <i>Hệ thống đã tự động gửi cảnh báo tới nhóm Telegram các phòng ban phụ trách.</i>\n";
-            $admin_msg .= "👉 <i>Vui lòng truy cập trang quản trị <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a></i>";
+        // 2. GỬI THÔNG BÁO VÀO NHÓM BAN QUẢN TRỊ / ADMIN
+        if ($notify_platform === '0' && function_exists('send_viber_core')) {
+            // Viber Admin Receiver ID (Config nid = 27 hoặc dùng chung nid = 24)
+            $viber_admin_id = function_exists('get_value_by_config') ? get_value_by_config(27) : (function_exists('get_config_value') ? get_config_value(27) : '');
+            if (empty($viber_admin_id)) {
+                $viber_admin_id = function_exists('get_value_by_config') ? get_value_by_config(24) : (function_exists('get_config_value') ? get_config_value(24) : '');
+            }
+            if (!empty($viber_admin_id)) {
+                $admin_msg = "📋 <b>[HỒ SƠ MỚI TIẾP NHẬN — TOÀN HỆ THỐNG]</b>\n";
+                $admin_msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
+                $admin_msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")\n";
+                $admin_msg .= "📄 <b>Loại hồ sơ:</b> " . htmlspecialchars($sub['doc_type_name'], ENT_QUOTES, 'UTF-8') . "\n";
+                $admin_msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
+                $admin_msg .= "⏳ <b>Trạng thái:</b> ĐANG THẨM ĐỊNH SONG SONG\n";
+                $admin_msg .= "⏰ <b>Thời gian:</b> " . date('d/m/Y H:i', strtotime($sub['ddate_submit'])) . "\n";
+                $admin_msg .= "👉 <i>Vui lòng truy cập trang quản trị <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a></i>";
+                send_viber_core($viber_admin_id, $admin_msg);
+            }
+        } elseif (function_exists('send_telegram_core')) {
+            $admin_group_id = function_exists('get_value_by_config') ? get_value_by_config(24) : (function_exists('get_config_value') ? get_config_value(24) : '');
+            if (!empty($admin_group_id)) {
+                $admin_msg = "📋 <b>[HỒ SƠ MỚI TIẾP NHẬN — TOÀN HỆ THỐNG]</b>\n";
+                $admin_msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
+                $admin_msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")\n";
+                $admin_msg .= "📄 <b>Loại hồ sơ:</b> " . htmlspecialchars($sub['doc_type_name'], ENT_QUOTES, 'UTF-8') . "\n";
+                $admin_msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
+                $admin_msg .= "⏳ <b>Trạng thái:</b> ĐANG THẨM ĐỊNH SONG SONG\n";
+                $admin_msg .= "⏰ <b>Thời gian:</b> " . date('d/m/Y H:i', strtotime($sub['ddate_submit'])) . "\n";
+                $admin_msg .= "⚡ <i>Hệ thống đã tự động gửi cảnh báo tới nhóm Telegram các phòng ban phụ trách.</i>\n";
+                $admin_msg .= "👉 <i>Vui lòng truy cập trang quản trị <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a></i>";
 
-            send_telegram_core($admin_group_id, $admin_msg);
+                send_telegram_core($admin_group_id, $admin_msg);
+            }
         }
 
         // 3. GỬI EMAIL XÁC NHẬN TIẾP NHẬN HỒ SƠ CHO KHÁCH HÀNG (TIMEOUT NHANH 2s - KHÔNG NGHẼN)

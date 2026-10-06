@@ -859,6 +859,68 @@ function send_telegram_core($chat_id, $message_text)
 
 /**
  *-------------------------------------------------------------------
+ * Gửi tin nhắn thông báo qua Viber Bot REST API
+ * @param string $receiver_id : ID người nhận / ID Chat phòng ban trên Viber
+ * @param string $message_text : Nội dung thông báo
+ *-------------------------------------------------------------------
+ */
+function send_viber_core($receiver_id, $message_text)
+{
+    $receiver_id = trim($receiver_id);
+    if (empty($receiver_id) || empty($message_text)) return FALSE;
+    
+    // Lấy Token xác thực Viber Bot từ bảng tconfig (nid = 26)
+    $viber_token = function_exists('get_value_by_config') ? get_value_by_config(26) : (function_exists('get_config_value') ? get_config_value(26) : '');
+    $viber_token = trim($viber_token);
+    if (empty($viber_token)) {
+        return FALSE;
+    }
+    
+    $url = "https://chatapi.viber.com/pa/send_message";
+    
+    // Chuyển đổi định dạng văn bản phù hợp với Viber (loại bỏ tag HTML)
+    $clean_text = html_entity_decode(strip_tags(str_replace(array('<br>', '<br/>', '<br />', '</p>', '</div>'), "\n", $message_text)), ENT_QUOTES, 'UTF-8');
+    
+    $data = array(
+        'receiver'        => $receiver_id,
+        'min_api_version' => 1,
+        'sender'          => array(
+            'name' => 'PICO PLAZA'
+        ),
+        'type'            => 'text',
+        'text'            => $clean_text
+    );
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_POST, TRUE);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+        'Content-Type: application/json',
+        'X-Viber-Auth-Token: ' . $viber_token
+    ));
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, FALSE);
+    curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+    curl_setopt($ch, CURLOPT_DNS_CACHE_TIMEOUT, 600);
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 6);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    
+    $response  = @curl_exec($ch);
+    $curl_err  = @curl_error($ch);
+    $http_code = @curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    @curl_close($ch);
+    
+    // Ghi log kiểm tra hoạt động Viber
+    $log_line = date('Y-m-d H:i:s') . " | [VIBER] Receiver: " . $receiver_id . " | HTTP: " . $http_code . " | Response: " . (!empty($response) ? trim($response) : $curl_err) . "\n";
+    @file_put_contents(FCPATH . 'telegram_debug.log', $log_line, FILE_APPEND);
+    
+    return $response;
+}
+
+/**
+ *-------------------------------------------------------------------
  * Gửi tin nhắn Telegram hàng loạt đồng thời (Parallel cURL Multi)
  * Tương thích 100% PHP 5.6, PHP 7.x, PHP 8.x, không gây nghẽn timeout
  * @param array $messages Mảng chứa danh sách array('chat_id' => ..., 'text' => ...)
