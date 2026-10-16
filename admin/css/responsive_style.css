@@ -1,20 +1,489 @@
-/* ================================================== */
-@media only screen and (max-width: 480px) {
-	
-}
-/* ================================================== */
-@media only screen and (min-width: 480px) and (max-width: 767px) {
+/* ==========================================================================
+   PICOPLAZA CMS ADMIN - COMPREHENSIVE RESPONSIVE STYLESHEET
+   Optimized for Mobile, Tablets and All Screen Sizes
+   ========================================================================== */
 
-}
-
-/* ================================================== */
-@media only screen and (min-width: 992px) and (max-width: 1199px) {
-}
-/* ================================================== */
-@media only screen and (min-width: 768px) and (max-width: 991px) {
-
+/* ==========================================================================
+   1. GLOBAL / SHARED UTILITIES
+   ========================================================================== */
+.table-responsive {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    width: 100%;
+    margin-bottom: 15px;
 }
 
-/* ================================================== */
-@media only screen and (min-width: 1200px) {
+/* Scrollbar styling for smooth table swiping */
+.table-responsive::-webkit-scrollbar,
+.card-box.table-responsive::-webkit-scrollbar {
+    height: 6px;
+}
+.table-responsive::-webkit-scrollbar-track,
+.card-box.table-responsive::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb,
+.card-box.table-responsive::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-thumb:hover,
+.card-box.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ==========================================================================
+   2. TABLET & MOBILE (< 992px)
+   ========================================================================== */
+@media (max-width: 991px) {
+    .container.body .right_col {
+        padding: 15px 12px 30px !important;
+    }
+    
+    .x_panel {
+        padding: 14px 12px !important;
+        margin-bottom: 15px !important;
+    }
+    
+    .top_nav .nav_menu {
+        padding: 0 10px 0 0 !important;
+    }
+}
+
+/* ==========================================================================
+   3. MOBILE DEVICES (<= 768px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    /* --- Main Layout & Spacing --- */
+    body {
+        font-size: 13px !important;
+    }
+
+    .container.body .right_col {
+        padding: 10px 8px 30px !important;
+        min-height: calc(100vh - 57px) !important;
+    }
+
+    .page-title {
+        height: auto !important;
+        padding: 0 !important;
+        margin-bottom: 8px !important;
+    }
+
+    .page-title .title_left, 
+    .page-title .title_right {
+        width: 100% !important;
+        float: none !important;
+        padding: 0 !important;
+        margin-bottom: 8px !important;
+        text-align: left !important;
+    }
+
+    .page-title .title_right a.btn,
+    .page-title .title_right button {
+        float: none !important;
+        width: 100% !important;
+        display: block !important;
+        text-align: center !important;
+        margin-bottom: 8px !important;
+    }
+
+    /* --- Panels & Headers --- */
+    .x_panel {
+        padding: 12px 10px !important;
+        margin-bottom: 15px !important;
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
+    }
+
+    .x_title {
+        padding: 0 0 10px 0 !important;
+        margin-bottom: 12px !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+    }
+
+    .x_title h2 {
+        font-size: 13.5px !important;
+        font-weight: 700 !important;
+        line-height: 1.45 !important;
+        color: #0f172a !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        float: none !important;
+        margin: 0 0 6px 0 !important;
+        width: 100% !important;
+        flex: 1 1 100% !important;
+    }
+
+    .x_title .panel_toolbox {
+        float: none !important;
+        margin: 0 !important;
+        min-width: 0 !important;
+    }
+
+    /* --- Filters & Search Controls --- */
+    .top-filter,
+    form.form-inline {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        width: 100% !important;
+        margin-bottom: 15px !important;
+        padding-bottom: 12px !important;
+        text-align: left !important;
+        float: none !important;
+    }
+
+    .top-filter input.form-control,
+    .top-filter select.form-control,
+    .top-filter input[type="text"],
+    .top-filter input[type="date"],
+    .top-filter select,
+    form.form-inline input.form-control,
+    form.form-inline select.form-control,
+    form.form-inline input[type="text"],
+    form.form-inline select {
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 38px !important;
+        font-size: 13px !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        display: block !important;
+        border-radius: 6px !important;
+    }
+
+    .top-filter .group-filter {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+        gap: 4px !important;
+        margin-bottom: 4px !important;
+        font-size: 13px !important;
+        color: #475569 !important;
+    }
+
+    .top-filter .group-filter input {
+        width: 100% !important;
+    }
+
+    .top-filter .btn,
+    .top-filter .btn-filter,
+    .top-filter input[type="button"],
+    .top-filter input[type="submit"],
+    form.form-inline .btn,
+    form.form-inline button,
+    form.form-inline a.btn {
+        width: 100% !important;
+        height: 38px !important;
+        margin: 4px 0 0 0 !important;
+        float: none !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+        border-radius: 6px !important;
+    }
+
+    /* Nút thêm mới và xóa chọn trên mobile */
+    .top-filter a.btn-success,
+    .top-filter input.btn-danger,
+    .top-filter input.btn-info {
+        flex: 1 1 100% !important;
+    }
+
+    /* --- Listview Tables --- */
+    .card-box.table-responsive,
+    .table-responsive,
+    .mgb15[style*="overflow-x"] {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        width: 100% !important;
+        display: block !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        background: #ffffff !important;
+        margin-bottom: 15px !important;
+        padding: 0 !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.03) !important;
+    }
+
+    .card-box.table-responsive > table.table,
+    .table-responsive > table.table,
+    table.table-striped.table-bordered {
+        min-width: 680px !important;
+        width: 100% !important;
+        margin-bottom: 0 !important;
+    }
+
+    .table thead th {
+        background: #f8fafc !important;
+        color: #334155 !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        padding: 10px 8px !important;
+        white-space: nowrap !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+        vertical-align: middle !important;
+    }
+
+    .table tbody td {
+        padding: 9px 8px !important;
+        font-size: 13px !important;
+        vertical-align: middle !important;
+    }
+
+    /* Trạng thái Badges */
+    .badge, .label {
+        display: inline-block !important;
+        white-space: nowrap !important;
+        padding: 4px 8px !important;
+        font-size: 11px !important;
+        font-weight: 600 !important;
+        border-radius: 4px !important;
+        line-height: 1.2 !important;
+    }
+
+    /* Nút Thao tác trong bảng (Chi tiết, Sửa, Xóa) */
+    .btn-action,
+    .table td .btn-action,
+    .table td .btn-xs,
+    .table td a.btn {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 4px !important;
+        white-space: nowrap !important;
+        padding: 5px 9px !important;
+        font-size: 11.5px !important;
+        font-weight: 600 !important;
+        border-radius: 5px !important;
+        margin: 2px !important;
+        min-height: 28px !important;
+        line-height: 1 !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        text-decoration: none !important;
+    }
+
+    .table td .btn i.fa {
+        font-size: 12px !important;
+        margin-right: 2px !important;
+    }
+
+    /* Hàng Filter trong Table */
+    tr.filter td {
+        padding: 6px 4px !important;
+    }
+    tr.filter td .form-control {
+        height: 32px !important;
+        font-size: 12px !important;
+        padding: 4px 6px !important;
+        min-width: 100px !important;
+    }
+    tr.filter td .btn {
+        height: 32px !important;
+        font-size: 12px !important;
+        padding: 4px 8px !important;
+    }
+
+    /* --- Phân Trang (Pagination) --- */
+    table.table-listview-pagging,
+    table.table-filter {
+        width: 100% !important;
+        display: block !important;
+        margin-top: 10px !important;
+    }
+
+    table.table-listview-pagging tbody,
+    table.table-listview-pagging tr,
+    table.table-listview-pagging td,
+    table.table-filter tbody,
+    table.table-filter tr,
+    table.table-filter td {
+        display: block !important;
+        width: 100% !important;
+        text-align: center !important;
+        padding: 6px 0 !important;
+        border: none !important;
+    }
+
+    table.table-listview-pagging td > div,
+    table.table-filter td > div {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        width: 100% !important;
+    }
+
+    table.table-listview-pagging label.col-form-label,
+    table.table-filter label {
+        width: 100% !important;
+        margin-bottom: 4px !important;
+        font-size: 13px !important;
+        color: #475569 !important;
+    }
+
+    table.table-listview-pagging input.btn,
+    table.table-filter input.btn {
+        height: 34px !important;
+        padding: 4px 12px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        border-radius: 5px !important;
+    }
+
+    table.table-listview-pagging input[type="text"],
+    table.table-filter input[type="text"] {
+        height: 34px !important;
+        font-size: 13px !important;
+        border-radius: 5px !important;
+    }
+
+    /* --- Form Editing & Add Pages --- */
+    .form-group.row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        margin-bottom: 12px !important;
+    }
+
+    .form-group.row .col-form-label,
+    .form-group label {
+        text-align: left !important;
+        width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-bottom: 4px !important;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #334155 !important;
+    }
+
+    .form-group.row div[class*="col-"] {
+        width: 100% !important;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .form-group input.form-control,
+    .form-group select.form-control,
+    .form-group textarea.form-control {
+        width: 100% !important;
+        border-radius: 6px !important;
+        font-size: 13.5px !important;
+    }
+
+    /* Nút hành động cuối form Lưu / Hủy */
+    .ln_solid {
+        margin: 15px 0 !important;
+    }
+
+    .offset-md-2, .offset-md-3, .offset-sm-2, .offset-sm-3 {
+        margin-left: 0 !important;
+    }
+
+    .form-group .btn-success,
+    .form-group .btn-primary,
+    .form-group .btn-danger,
+    .form-group .btn-default {
+        width: 100% !important;
+        height: 40px !important;
+        margin: 4px 0 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        border-radius: 6px !important;
+    }
+
+    /* --- Dashboard Home Cards --- */
+    .d-flex.align-items-center.justify-content-center[style*="100vh"] {
+        height: auto !important;
+        min-height: auto !important;
+        padding: 10px 0 !important;
+    }
+
+    .order-box {
+        padding: 14px 14px !important;
+        margin-bottom: 12px !important;
+        border-radius: 10px !important;
+    }
+
+    .dash-icon-box {
+        width: 44px !important;
+        height: 44px !important;
+        margin-right: 12px !important;
+        border-radius: 8px !important;
+    }
+
+    .dash-icon-box i {
+        font-size: 18px !important;
+    }
+
+    .dash-title-text {
+        font-size: 14px !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+    }
+}
+
+/* ==========================================================================
+   4. EXTRA SMALL PHONES (<= 480px)
+   ========================================================================== */
+@media (max-width: 480px) {
+    .container.body .right_col {
+        padding: 8px 6px 25px !important;
+    }
+
+    .x_panel {
+        padding: 10px 8px !important;
+    }
+
+    .x_title h2 {
+        font-size: 13px !important;
+    }
+
+    .top_nav .nav_menu {
+        padding: 0 6px 0 0 !important;
+    }
+
+    .top_nav .nav_menu .nav.toggle a#menu_toggle {
+        padding: 10px 14px !important;
+        font-size: 16px !important;
+    }
+
+    .top_nav .user-profile-btn {
+        padding: 3px 8px 3px 4px !important;
+        gap: 6px !important;
+    }
+
+    .top_nav .user-profile-btn img {
+        width: 26px !important;
+        height: 26px !important;
+    }
+
+    .top_nav .user-profile-btn span.user-name {
+        max-width: 90px !important;
+        font-size: 12px !important;
+    }
+
+    #btn-toggle-pico-push {
+        width: 34px !important;
+        height: 34px !important;
+        margin-right: 8px !important;
+    }
+
+    #pico-push-bell-icon {
+        font-size: 14px !important;
+    }
 }

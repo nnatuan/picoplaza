@@ -73,26 +73,15 @@ class Do_doc_type extends CI_Controller
         $cdepts_required = (!empty($depts_approve) && is_array($depts_approve)) ? implode(',', array_map('intval', $depts_approve)) : '';
         $cdepts_view     = (!empty($depts_view) && is_array($depts_view)) ? implode(',', array_map('intval', $depts_view)) : '';
 
-        // Xử lý upload file biểu mẫu PDF
-        $file_template_path = '';
-        if (isset($_FILES['file_template']) && $_FILES['file_template']['name'] != '') {
-            $upload_dir = FCPATH . '../upload/doc_type/';
-            if (!is_dir($upload_dir)) {
-                @mkdir($upload_dir, 0777, true);
-            }
-
-            $ext = strtolower(pathinfo($_FILES['file_template']['name'], PATHINFO_EXTENSION));
-            if (!in_array($ext, array('pdf', 'doc', 'docx', 'xls', 'xlsx'))) {
+        // Kiểm tra tệp biểu mẫu upload nếu có
+        $has_upload = (isset($_FILES['file_template']) && !empty($_FILES['file_template']['name']));
+        $file_ext = '';
+        if ($has_upload) {
+            $file_ext = strtolower(pathinfo($_FILES['file_template']['name'], PATHINFO_EXTENSION));
+            if (!in_array($file_ext, array('pdf', 'doc', 'docx', 'xls', 'xlsx'))) {
                 $_SESSION['flash_error'] = 'Chỉ chấp nhận tệp biểu mẫu PDF, DOC, DOCX, XLS!';
                 redirect(base_url() . 'index.php/do_doc_type/f_add');
                 return;
-            }
-
-            $filename = 'mau_' . time() . '_' . rand(100, 999) . '.' . $ext;
-            $target_file = $upload_dir . $filename;
-
-            if (move_uploaded_file($_FILES['file_template']['tmp_name'], $target_file)) {
-                $file_template_path = 'upload/doc_type/' . $filename;
             }
         }
 
@@ -100,7 +89,7 @@ class Do_doc_type extends CI_Controller
             'ccode'           => $ccode,
             'cname'           => $cname,
             'cdescription'    => $cdescription,
-            'cfile_template'  => $file_template_path,
+            'cfile_template'  => '',
             'cdepts_required' => $cdepts_required,
             'cdepts_view'     => $cdepts_view,
             'nstatus'         => $nstatus,
@@ -113,6 +102,30 @@ class Do_doc_type extends CI_Controller
         }
 
         $this->db->insert(Fget_ap_table('tdoc_type'), $insert_data);
+        $new_nid = $this->db->insert_id();
+
+        // Xử lý lưu file biểu mẫu với tên file gốc + _nid
+        if ($has_upload && $new_nid > 0) {
+            $upload_dir = FCPATH . '../upload/doc_type/';
+            if (!is_dir($upload_dir)) {
+                @mkdir($upload_dir, 0777, true);
+            }
+
+            $orig_filename = pathinfo($_FILES['file_template']['name'], PATHINFO_FILENAME);
+            $clean_filename = trim(preg_replace('/[\\/\\\\:*?"<>|]/', '', $orig_filename));
+            if (empty($clean_filename)) {
+                $clean_filename = 'doc_type';
+            }
+
+            $filename = $clean_filename . '_' . $new_nid . '.' . $file_ext;
+            $target_file = $upload_dir . $filename;
+
+            if (move_uploaded_file($_FILES['file_template']['tmp_name'], $target_file)) {
+                $file_template_path = 'upload/doc_type/' . $filename;
+                $this->db->where('nid', $new_nid)->update(Fget_ap_table('tdoc_type'), array('cfile_template' => $file_template_path));
+            }
+        }
+
         $_SESSION['flash_msg'] = 'Thêm mới loại hồ sơ "' . htmlspecialchars($cname) . '" thành công!';
         redirect(base_url() . 'index.php/do_doc_type_listview');
     }
@@ -170,9 +183,9 @@ class Do_doc_type extends CI_Controller
         $cdepts_required = (!empty($depts_approve) && is_array($depts_approve)) ? implode(',', array_map('intval', $depts_approve)) : '';
         $cdepts_view     = (!empty($depts_view) && is_array($depts_view)) ? implode(',', array_map('intval', $depts_view)) : '';
 
-        // Xử lý upload file mới nếu có
+        // Xử lý upload file mới nếu có (giữ nguyên tên file gốc + _nid)
         $file_template_path = $old_data['cfile_template'];
-        if (isset($_FILES['file_template']) && $_FILES['file_template']['name'] != '') {
+        if (isset($_FILES['file_template']) && !empty($_FILES['file_template']['name'])) {
             $upload_dir = FCPATH . '../upload/doc_type/';
             if (!is_dir($upload_dir)) {
                 @mkdir($upload_dir, 0777, true);
@@ -185,10 +198,23 @@ class Do_doc_type extends CI_Controller
                 return;
             }
 
-            $filename = 'mau_' . time() . '_' . rand(100, 999) . '.' . $ext;
+            $orig_filename = pathinfo($_FILES['file_template']['name'], PATHINFO_FILENAME);
+            $clean_filename = trim(preg_replace('/[\\/\\\\:*?"<>|]/', '', $orig_filename));
+            if (empty($clean_filename)) {
+                $clean_filename = 'doc_type';
+            }
+
+            $filename = $clean_filename . '_' . $nid . '.' . $ext;
             $target_file = $upload_dir . $filename;
 
             if (move_uploaded_file($_FILES['file_template']['tmp_name'], $target_file)) {
+                // Xóa file cũ nếu khác tên file mới để tránh dư thừa
+                if (!empty($old_data['cfile_template']) && $old_data['cfile_template'] != ('upload/doc_type/' . $filename)) {
+                    $old_file_full = FCPATH . '../' . $old_data['cfile_template'];
+                    if (file_exists($old_file_full)) {
+                        @unlink($old_file_full);
+                    }
+                }
                 $file_template_path = 'upload/doc_type/' . $filename;
             }
         }

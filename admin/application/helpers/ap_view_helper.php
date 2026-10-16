@@ -531,35 +531,12 @@ function Vproduct()
     $str .= ' a.nid_cat_product      as nid_cat_product, ';
     $str .= ' a.nid_province         as nid_province, ';
     $str .= ' a.ccode                as ccode, ';
-    $str .= ' a.ctitle               as ctitle, '; // Đồng bộ cproducts -> ctitle
-    $str .= ' a.clocation_detail     as clocation_detail, ';
-    $str .= ' a.cprice_display       as cprice_display, ';
-    $str .= ' a.nprice_value         as nprice_value, ';
-    $str .= ' a.narea                as narea, ';
-    $str .= ' a.nbedroom             as nbedroom, ';
-    $str .= ' a.nbathroom            as nbathroom, ';
-    $str .= ' a.cshort_content       as cshort_content, ';
-    $str .= ' a.ccontent             as ccontent, ';
-    $str .= ' a.cimage               as cimage, ';
-    $str .= ' a.cmaps_iframe         as cmaps_iframe, ';
-    
-    // Phân tách rõ ràng trạng thái hiển thị hệ thống và trạng thái giao dịch BĐS
+    $str .= ' a.ctitle               as ctitle, ';
     $str .= ' a.nstatus              as nstatus, ';
-	$str .= ' a.cdel              	 as cdel, ';
     $str .= ' a.nproduct_status      as nproduct_status, ';
-    $str .= ' a.nactive              as nactive, ';
-    $str .= ' a.chome               as chome, ';
-    
-    // Lấy tên danh mục và tên tỉnh thành từ các bảng liên kết foreign key
     $str .= ' b.ctitle               as ccat_product_title, '; 
-    $str .= ' p.ctitle            as cprovince_title, ';    
-    
-    // Đồng bộ các trường quản trị hệ thống và kiểu dữ liệu datetime
-    $str .= ' a.niduser_created      as niduser_created, ';
-    $str .= ' a.niduser_updated      as niduser_updated, ';
-    $str .= ' a.dcreated_at          as dcreated_at, ';
-    $str .= ' a.dupdated_at          as dupdated_at ';
-    
+    $str .= ' p.ctitle               as cprovince_title, ';    
+    $str .= ' a.dcreated_at          as dcreated_at ';
     $str .= ' FROM ' . Fget_ap_table('tproduct') . ' as a ';
     $str .= ' LEFT JOIN ' . Fget_ap_table('tcat_product') . ' as b ON a.nid_cat_product = b.nid ';
     $str .= ' LEFT JOIN ' . Fget_ap_table('tprovince') . ' as p ON a.nid_province = p.nid ';

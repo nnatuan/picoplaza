@@ -135,41 +135,7 @@
                     </div>
                 </div>
 
-                <!-- Box Phê duyệt Cấp Quản trị (Admin Review) -->
-                <?php if($submission['cstatus'] == 'WAITING_ADMIN'): ?>
-                    <div class="x_panel" style="border: 1.5px solid #ea580c; border-radius: 4px;">
-                        <div class="x_title">
-                            <h2 style="color: #ea580c; font-weight:700; font-size: 15px;"><i class="fa fa-check-square-o"></i> Phê Duyệt Cấp Quản Trị (Admin)</h2>
-                            <div class="clearfix"></div>
-                        </div>
-                        <div class="x_content">
-                            <p style="color:#64748b; font-size:13px; margin-bottom:12px;">Tất cả phòng ban chuyên môn đã thông qua. Vui lòng đưa ra quyết định cấp quản trị:</p>
 
-                            <form action="<?php echo base_url('index.php/do_doc_submission/admin_review'); ?>" method="POST" enctype="multipart/form-data">
-                                <input type="hidden" name="nid_submission" value="<?php echo $submission['nid']; ?>">
-
-                                <div class="form-group" style="margin-bottom: 10px;">
-                                    <label style="font-weight:600; font-size:13px;">Đính kèm tệp văn bản chính thức đã xác nhận (PDF):</label>
-                                    <input type="file" name="file_approved" class="form-control input-sm" accept=".pdf,.jpg,.png">
-                                </div>
-
-                                <div class="form-group" style="margin-bottom: 12px;">
-                                    <label style="font-weight:600; font-size:13px;">Ghi chú phản hồi cho khách hàng:</label>
-                                    <textarea name="reason_note" class="form-control input-sm" rows="2" placeholder="Ghi chú thêm..."></textarea>
-                                </div>
-
-                                <div style="display:flex; gap:10px;">
-                                    <button type="submit" name="action" value="APPROVED" class="btn btn-success btn-sm" style="flex:1; font-weight:600; padding:7px 12px; font-size:12.5px;" onclick="return confirm('Xác nhận thông qua và hoàn tất hồ sơ?');">
-                                        <i class="fa fa-check"></i> THÔNG QUA (APPROVED)
-                                    </button>
-                                    <button type="submit" name="action" value="REJECTED" class="btn btn-danger btn-sm" style="flex:1; font-weight:600; padding:7px 12px; font-size:12.5px;" onclick="return confirm('Xác nhận từ chối hồ sơ này?');">
-                                        <i class="fa fa-times"></i> TỪ CHỐI (REJECTED)
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                <?php endif; ?>
 
                 <!-- Box Cơ chế Quản trị & Can thiệp đặc biệt (Admin Override) -->
                 <div class="x_panel" style="border: 1.5px dashed #dc2626; background: #fffaf0; border-radius: 4px;">

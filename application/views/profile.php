@@ -60,17 +60,17 @@
                 <ul style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px;">
                     <li>
                         <a href="<?php echo base_url(); ?>profile" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; background: #ea580c; color: #fff; font-weight: 700; text-decoration: none; font-size: 13.5px;">
-                            <i class="fa-regular fa-id-card"></i> Trang cá nhân
+                            <i class="fa-regular fa-id-card"></i> Tài khoản
                         </a>
                     </li>
                     <li>
                         <a href="<?php echo base_url(); ?>doc_portal" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; color: #475569; font-weight: 600; text-decoration: none; font-size: 13.5px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#ea580c';" onmouseout="this.style.background='transparent'; this.style.color='#475569';">
-                            <i class="fa-solid fa-folder-tree"></i> Hồ sơ thẩm định
+                            <i class="fa-solid fa-folder-tree"></i> Hồ sơ đăng ký
                         </a>
                     </li>
                     <li>
                         <a href="<?php echo base_url(); ?>my_tickets" style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 8px; color: #475569; font-weight: 600; text-decoration: none; font-size: 13.5px; transition: all 0.2s;" onmouseover="this.style.background='#f1f5f9'; this.style.color='#ea580c';" onmouseout="this.style.background='transparent'; this.style.color='#475569';">
-                            <i class="fa-solid fa-ticket"></i> Ticket của tôi
+                            <i class="fa-solid fa-ticket"></i> Phiếu góp ý
                         </a>
                     </li>
                     <li>

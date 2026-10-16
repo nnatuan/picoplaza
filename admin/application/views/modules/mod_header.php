@@ -99,7 +99,6 @@
 						<ul class="nav child_menu">
 							<li><a href="<?php echo base_url(); ?>index.php/do_dept_review_listview">Cổng Thẩm Định Phòng Ban</a></li>
 							<?php if (has_staff_role('admin')): ?>
-								<li><a href="<?php echo base_url(); ?>index.php/do_doc_submission_listview">Quản Trị Phê Duyệt Hồ Sơ</a></li>
 								<li><a href="<?php echo base_url(); ?>index.php/do_doc_type_listview">Cấu Hình Loại Hồ Sơ & Biểu Mẫu</a></li>
 							<?php endif; ?>
 						</ul>
@@ -151,15 +150,59 @@
                 <a id="menu_toggle"><i class="fa fa-bars"></i></a>
               </div>
               <nav class="nav navbar-nav">
-              <ul class=" navbar-right">
-                <li class="nav-item dropdown open" style="padding-left: 15px;">
-                  <a href="javascript:;" class="user-profile dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-toggle="dropdown" aria-expanded="false">
+              <ul class="navbar-right">
+                <!-- Dropdown Chuông Thông Báo & Trung Tâm Lưu Trữ Hồ Sơ -->
+                <li class="nav-item dropdown" id="pico-notif-dropdown-wrapper">
+                  <a href="javascript:;" id="btn-toggle-pico-push" onclick="picoToggleNotifDropdown(event);" title="Trung tâm thông báo hồ sơ" style="position: relative; display: flex; align-items: center; justify-content: center; width: 38px; height: 38px; border-radius: 50%; background: #ffffff; border: 1px solid #cbd5e1; color: #475569; text-decoration: none; transition: all 0.2s ease; box-shadow: 0 1px 3px rgba(0,0,0,0.06); cursor: pointer; margin-right: 12px;">
+                    <i class="fa fa-bell" id="pico-push-bell-icon" style="font-size: 16px; color: #ea580c;"></i>
+                    <!-- Số đếm đỏ thông báo chưa đọc -->
+                    <span id="pico-notif-count-badge" style="position: absolute; top: -3px; right: -3px; min-width: 18px; height: 18px; line-height: 14px; background: #ef4444; color: #ffffff; font-size: 10px; font-weight: 800; border-radius: 9px; padding: 1px 5px; text-align: center; border: 2px solid #ffffff; box-shadow: 0 2px 5px rgba(239,68,68,0.4); display: none; z-index: 10;">0</span>
+                    <!-- Chấm trạng thái kết nối Web Push -->
+                    <span id="pico-push-badge" style="position: absolute; bottom: 0px; right: 0px; width: 8px; height: 8px; background: #10b981; border: 2px solid #ffffff; border-radius: 50%; z-index: 10;"></span>
+                  </a>
+
+                  <!-- Hộp thả xuống hiển thị danh sách thông báo -->
+                  <div id="pico-notif-dropdown-menu" style="display: none;">
+                    <!-- Header -->
+                    <div style="padding: 12px 16px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+                      <div style="font-weight: 700; font-size: 14px; color: #0f172a; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa fa-bell text-warning"></i> Thông báo hồ sơ
+                      </div>
+                      <a href="javascript:;" onclick="picoMarkAllNotificationsRead(event);" style="font-size: 12px; color: #ea580c; font-weight: 600; text-decoration: none;" onmouseover="this.style.textDecoration='underline';" onmouseout="this.style.textDecoration='none';">Đánh dấu tất cả đã đọc</a>
+                    </div>
+
+                    <!-- List container -->
+                    <div id="pico-notif-list-container" style="max-height: 380px; overflow-y: auto; padding: 4px 0;">
+                      <div style="padding: 24px; text-align: center; color: #94a3b8; font-size: 13px;">
+                        <i class="fa fa-spinner fa-spin" style="font-size: 20px; color: #ea580c; margin-bottom: 8px;"></i><br>Đang tải thông báo...
+                      </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="padding: 10px 16px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; display: flex; justify-content: space-between; align-items: center;">
+                      <a href="<?php echo base_url(); ?>index.php/do_dept_review_listview" style="font-size: 12px; font-weight: 700; color: #0284c7; text-decoration: none;">Xem Cổng Thẩm Định &rarr;</a>
+                      <a href="javascript:;" onclick="picoRequestNotificationPermission();" style="font-size: 11px; color: #64748b; text-decoration: none;" title="Bấm để thử âm thanh Ting Ting"><i class="fa fa-volume-up"></i> Thử chuông</a>
+                    </div>
+                  </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                  <a href="javascript:;" class="user-profile user-profile-btn dropdown-toggle" aria-haspopup="true" id="navbarDropdown" data-toggle="dropdown" aria-expanded="false">
 					<img src="<?php echo $avatar_url; ?>">
-					<?php echo Fget_userdata('session_user_full_name'); ?>
+					<span class="user-name"><?php echo Fget_userdata('session_user_full_name'); ?></span>
+                    <i class="fa fa-angle-down" style="font-size: 12px; color: #64748b; margin-left: 2px;"></i>
                   </a>
                   <div class="dropdown-menu dropdown-usermenu pull-right" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item"  href="<?php echo base_url().'index.php/do_profile'?>"> Hồ sơ</a>
-                    <a class="dropdown-item"  href="<?php echo base_url().'index.php/do_logout'?>"><i class="fa fa-sign-out pull-right"></i> Đăng xuất</a>
+                    <a class="dropdown-item" href="<?php echo base_url().'index.php/do_profile'?>">
+                        <span><i class="fa fa-user" style="margin-right: 8px; color: #0284c7;"></i> Hồ sơ cá nhân</span>
+                    </a>
+                    <a class="dropdown-item" href="javascript:;" onclick="picoRequestNotificationPermission();">
+                        <span><i class="fa fa-bell" style="margin-right: 8px; color: #ea580c;"></i> Thử chuông thông báo</span>
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item item-danger" href="<?php echo base_url().'index.php/do_logout'?>">
+                        <span><i class="fa fa-sign-out" style="margin-right: 8px; color: #ef4444;"></i> Đăng xuất</span>
+                    </a>
                   </div>
                 </li>
 			  </ul>
@@ -167,3 +210,9 @@
           </div>
         </div>
         <!-- /top navigation -->
+
+        <script type="text/javascript">
+            var PICO_ADMIN_BASE = '<?php echo base_url(); ?>';
+            var PICO_ROOT_BASE  = '<?php echo Fstr_replace('admin/', '', base_url()); ?>';
+        </script>
+        <script type="text/javascript" src="<?php echo base_url(); ?>js/pico_push_notification.js?v=<?php echo time(); ?>"></script>

@@ -236,22 +236,41 @@ if (!function_exists('workflow_dept_review')) {
             }
 
             if ($all_approved && count($approve_steps) > 0) {
-                // Tự động chuyển trạng thái sang WAITING_ADMIN
+                // Tự động chuyển trạng thái sang COMPLETED (Lược bỏ khâu Admin phê duyệt theo quy trình mới)
                 $ci->db->where('nid', (int)$submission_id);
-                $ci->db->update(Fget_ap_table('tdoc_submission'), array('cstatus' => 'WAITING_ADMIN'));
+                $ci->db->update(Fget_ap_table('tdoc_submission'), array(
+                    'cstatus'         => 'COMPLETED',
+                    'ddate_completed' => date('Y-m-d H:i:s')
+                ));
 
                 workflow_add_log(
                     $submission_id,
                     0,
                     'system',
-                    'TRANSITION_WAITING_ADMIN',
+                    'TRANSITION_COMPLETED',
                     'IN_REVIEW',
-                    'WAITING_ADMIN',
-                    'Tất cả các phòng ban chức năng đã thẩm định thông qua. Hồ sơ đã chuyển sang cấp Admin xem xét.'
+                    'COMPLETED',
+                    'Tất cả các phòng ban chức năng đã thẩm định thông qua. Hồ sơ đã hoàn tất phê duyệt.'
                 );
 
-                // Bắn cảnh báo cho Admin
-                workflow_notify_admin_waiting($submission_id);
+                // Bắn thông báo hoàn tất cho khách hàng (kèm link văn bản xác nhận)
+                workflow_notify_customer_status($submission_id, 'COMPLETED');
+
+                // Bắn thông báo Telegram cho Admin về hồ sơ đã hoàn tất
+                $admin_group_id = function_exists('get_value_by_config') ? get_value_by_config(24) : (function_exists('get_config_value') ? get_config_value(24) : '');
+                if (!empty($admin_group_id) && function_exists('send_telegram_core')) {
+                    $sub_info = get_doc_submission_by_id($submission_id);
+                    $sub_code = !empty($sub_info['ccode']) ? $sub_info['ccode'] : $submission_id;
+                    $cust_name = !empty($sub_info['ccustomer_name']) ? $sub_info['ccustomer_name'] : '';
+                    $type_name = !empty($sub_info['doc_type_name']) ? $sub_info['doc_type_name'] : '';
+                    
+                    $msg = "✅ <b>[HỒ SƠ ĐÃ ĐƯỢC THÔNG QUA HOÀN TẤT]</b>\n";
+                    $msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub_code, ENT_QUOTES, 'UTF-8') . "\n";
+                    $msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($cust_name, ENT_QUOTES, 'UTF-8') . "\n";
+                    $msg .= "📋 <b>Loại hồ sơ:</b> " . htmlspecialchars($type_name, ENT_QUOTES, 'UTF-8') . "\n";
+                    $msg .= "🎉 <b>Kết quả:</b> Tất cả các phòng ban phụ trách đã duyệt thông qua. Hồ sơ đã tự động được hoàn tất.";
+                    @send_telegram_core($admin_group_id, $msg);
+                }
             }
 
             return array('status' => true, 'message' => 'Đã thẩm định thông qua.');
@@ -423,11 +442,36 @@ if (!function_exists('workflow_add_log')) {
     }
 }
 
+if (!function_exists('ensure_workflow_legacy_cleanup')) {
+    function ensure_workflow_legacy_cleanup()
+    {
+        $ci =& get_instance();
+        $ci->load->database();
+        // Tự động chuyển các hồ sơ cũ đang chờ admin duyệt sang trạng thái hoàn tất (COMPLETED)
+        $waiting_rows = $ci->db->where('cstatus', 'WAITING_ADMIN')->get(Fget_ap_table('tdoc_submission'))->result_array();
+        if (!empty($waiting_rows)) {
+            $ci->db->query("UPDATE " . Fget_ap_table('tdoc_submission') . " SET cstatus = 'COMPLETED', ddate_completed = NOW() WHERE cstatus = 'WAITING_ADMIN'");
+            foreach ($waiting_rows as $w_sub) {
+                workflow_add_log(
+                    $w_sub['nid'],
+                    0,
+                    'system',
+                    'TRANSITION_COMPLETED',
+                    'WAITING_ADMIN',
+                    'COMPLETED',
+                    'Hồ sơ đã được thông qua hoàn tất theo quy trình mới (lược bỏ khâu Admin duyệt).'
+                );
+            }
+        }
+    }
+}
+
 if (!function_exists('get_doc_submission_by_id')) {
     function get_doc_submission_by_id($nid)
     {
         $ci =& get_instance();
         $ci->load->database();
+        ensure_workflow_legacy_cleanup();
         $query = "SELECT s.*, t.cname as doc_type_name, t.ccode as doc_type_code 
                   FROM " . Fget_ap_table('tdoc_submission') . " s
                   LEFT JOIN " . Fget_ap_table('tdoc_type') . " t ON s.nid_doc_type = t.nid
@@ -441,6 +485,7 @@ if (!function_exists('get_doc_submission_by_code')) {
     {
         $ci =& get_instance();
         $ci->load->database();
+        ensure_workflow_legacy_cleanup();
         $query = "SELECT s.*, t.cname as doc_type_name, t.ccode as doc_type_code 
                   FROM " . Fget_ap_table('tdoc_submission') . " s
                   LEFT JOIN " . Fget_ap_table('tdoc_type') . " t ON s.nid_doc_type = t.nid
@@ -493,14 +538,15 @@ if (!function_exists('workflow_notify_new_submission')) {
 
         $admin_url = (strpos(base_url(), '/admin') !== false) ? rtrim(base_url(), '/') : rtrim(base_url(), '/') . '/admin';
 
-        // Kiểm tra nền tảng thông báo: 1 = Telegram, 0 = Viber (Config nid = 25)
-        $notify_platform = function_exists('get_config_value') ? get_config_value(25) : (function_exists('get_value_by_config') ? get_value_by_config(25) : '1');
-        if ($notify_platform === '' || $notify_platform === null) {
-            $notify_platform = '1';
-        }
-        $notify_platform = (string)trim($notify_platform);
+        // Kiểm tra cấu hình bật gửi Telegram (Config nid = 25)
+        // Hỗ trợ: Nếu config = 1 (hoặc theo cấu hình nếu = 0 theo yêu cầu bật gửi)
+        $tele_config = function_exists('get_config_value') ? get_config_value(25) : (function_exists('get_value_by_config') ? get_value_by_config(25) : '1');
+        $tele_config = trim((string)$tele_config);
+        
+        // Cho phép gửi Telegram khi config nid=25 được thiết lập (hỗ trợ cả 0 và 1)
+        $is_telegram_enabled = ($tele_config === '1' || $tele_config === '0' || $tele_config === '');
 
-        // 1. GỬI THÔNG BÁO TỚI NHÓM CỦA TỪNG PHÒNG BAN THẨM ĐỊNH
+        // 1. GỬI THÔNG BÁO TỚI NHÓM TELEGRAM CỦA TỪNG PHÒNG BAN THẨM ĐỊNH
         $steps = get_doc_approval_steps($submission_id);
         if (!empty($steps)) {
             $sent_groups = array();
@@ -525,35 +571,14 @@ if (!function_exists('workflow_notify_new_submission')) {
                 $dept_msg .= "⏰ <b>Thời gian nộp:</b> " . date('d/m/Y H:i', strtotime($sub['ddate_submit'])) . "\n";
                 $dept_msg .= "⚡ <i>Vui lòng chuyên viên phòng ban đăng nhập CMS Pico Plaza <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a> để thẩm định.</i>";
 
-                if ($notify_platform === '0' && function_exists('send_viber_core')) {
-                    // Gửi qua Viber Bot
-                    send_viber_core($group_id, $dept_msg);
-                } elseif (function_exists('send_telegram_core')) {
-                    // Mặc định gửi qua Telegram
+                if ($is_telegram_enabled && function_exists('send_telegram_core')) {
                     send_telegram_core($group_id, $dept_msg);
                 }
             }
         }
 
         // 2. GỬI THÔNG BÁO VÀO NHÓM BAN QUẢN TRỊ / ADMIN
-        if ($notify_platform === '0' && function_exists('send_viber_core')) {
-            // Viber Admin Receiver ID (Config nid = 27 hoặc dùng chung nid = 24)
-            $viber_admin_id = function_exists('get_config_value') ? get_config_value(27) : (function_exists('get_value_by_config') ? get_value_by_config(27) : '');
-            if (empty($viber_admin_id)) {
-                $viber_admin_id = function_exists('get_config_value') ? get_config_value(24) : (function_exists('get_value_by_config') ? get_value_by_config(24) : '');
-            }
-            if (!empty($viber_admin_id)) {
-                $admin_msg = "📋 <b>[HỒ SƠ MỚI TIẾP NHẬN — TOÀN HỆ THỐNG]</b>\n";
-                $admin_msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
-                $admin_msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")\n";
-                $admin_msg .= "📄 <b>Loại hồ sơ:</b> " . htmlspecialchars($sub['doc_type_name'], ENT_QUOTES, 'UTF-8') . "\n";
-                $admin_msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
-                $admin_msg .= "⏳ <b>Trạng thái:</b> ĐANG THẨM ĐỊNH SONG SONG\n";
-                $admin_msg .= "⏰ <b>Thời gian:</b> " . date('d/m/Y H:i', strtotime($sub['ddate_submit'])) . "\n";
-                $admin_msg .= "👉 <i>Vui lòng truy cập trang quản trị <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a></i>";
-                send_viber_core($viber_admin_id, $admin_msg);
-            }
-        } elseif (function_exists('send_telegram_core')) {
+        if ($is_telegram_enabled && function_exists('send_telegram_core')) {
             $admin_group_id = function_exists('get_config_value') ? get_config_value(24) : (function_exists('get_value_by_config') ? get_value_by_config(24) : '');
             if (!empty($admin_group_id)) {
                 $admin_msg = "📋 <b>[HỒ SƠ MỚI TIẾP NHẬN — TOÀN HỆ THỐNG]</b>\n";
@@ -563,9 +588,7 @@ if (!function_exists('workflow_notify_new_submission')) {
                 $admin_msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
                 $admin_msg .= "⏳ <b>Trạng thái:</b> ĐANG THẨM ĐỊNH SONG SONG\n";
                 $admin_msg .= "⏰ <b>Thời gian:</b> " . date('d/m/Y H:i', strtotime($sub['ddate_submit'])) . "\n";
-                $admin_msg .= "⚡ <i>Hệ thống đã tự động gửi cảnh báo tới nhóm Telegram các phòng ban phụ trách.</i>\n";
                 $admin_msg .= "👉 <i>Vui lòng truy cập trang quản trị <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a></i>";
-
                 send_telegram_core($admin_group_id, $admin_msg);
             }
         }
@@ -667,8 +690,8 @@ if (!function_exists('get_my_doc_submissions')) {
         $where_cond .= ") ";
 
         $str_query = " SELECT s.*, t.cname as doc_type_name,
-                       (SELECT COUNT(*) FROM " . Fget_ap_table('tdoc_approval_step') . " WHERE nid_submission = s.nid) as total_steps,
-                       (SELECT COUNT(*) FROM " . Fget_ap_table('tdoc_approval_step') . " WHERE nid_submission = s.nid AND cstep_status = 'APPROVED') as approved_steps
+                       (SELECT COUNT(*) FROM " . Fget_ap_table('tdoc_approval_step') . " WHERE nid_submission = s.nid AND (cpermission = 'APPROVE' OR cpermission IS NULL OR cpermission = '')) as total_steps,
+                       (SELECT COUNT(*) FROM " . Fget_ap_table('tdoc_approval_step') . " WHERE nid_submission = s.nid AND (cpermission = 'APPROVE' OR cpermission IS NULL OR cpermission = '') AND cstep_status = 'APPROVED') as approved_steps
                        FROM " . Fget_ap_table('tdoc_submission') . " s
                        LEFT JOIN " . Fget_ap_table('tdoc_type') . " t ON s.nid_doc_type = t.nid
                        WHERE " . $where_cond . " 
@@ -780,6 +803,7 @@ if (!function_exists('get_doc_submissions_list')) {
     {
         $ci =& get_instance();
         $ci->load->database();
+        ensure_workflow_legacy_cleanup();
 
         $where_sql = " WHERE 1=1 ";
         if (!empty($filter_status)) {
@@ -790,8 +814,8 @@ if (!function_exists('get_doc_submissions_list')) {
         }
 
         $str_query = " SELECT s.*, t.cname as doc_type_name,
-                              (SELECT COUNT(*) FROM " . Fget_ap_table('tdoc_approval_step') . " WHERE nid_submission = s.nid) as total_steps,
-                              (SELECT COUNT(*) FROM " . Fget_ap_table('tdoc_approval_step') . " WHERE nid_submission = s.nid AND cstep_status = 'APPROVED') as approved_steps
+                              (SELECT COUNT(*) FROM " . Fget_ap_table('tdoc_approval_step') . " WHERE nid_submission = s.nid AND (cpermission = 'APPROVE' OR cpermission IS NULL OR cpermission = '')) as total_steps,
+                              (SELECT COUNT(*) FROM " . Fget_ap_table('tdoc_approval_step') . " WHERE nid_submission = s.nid AND (cpermission = 'APPROVE' OR cpermission IS NULL OR cpermission = '') AND cstep_status = 'APPROVED') as approved_steps
                        FROM " . Fget_ap_table('tdoc_submission') . " s
                        LEFT JOIN " . Fget_ap_table('tdoc_type') . " t ON s.nid_doc_type = t.nid
                        " . $where_sql . "
@@ -799,3 +823,196 @@ if (!function_exists('get_doc_submissions_list')) {
         return $ci->db->query($str_query)->result_array();
     }
 }
+
+if (!function_exists('ensure_notification_table_exists')) {
+    function ensure_notification_table_exists()
+    {
+        $ci =& get_instance();
+        $ci->load->database();
+        $table_name = Fget_ap_table('tdoc_notification');
+        if (!$ci->db->table_exists($table_name)) {
+            $sql = "CREATE TABLE IF NOT EXISTS `" . $table_name . "` (
+                `nid` int(11) NOT NULL AUTO_INCREMENT,
+                `nid_submission` int(11) NOT NULL DEFAULT '0',
+                `nid_dept` int(11) NOT NULL DEFAULT '0',
+                `nid_user` int(11) NOT NULL DEFAULT '0',
+                `ctype` varchar(50) COLLATE utf8_unicode_ci NOT NULL DEFAULT 'NEW_SUBMISSION',
+                `ctitle` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+                `cmessage` text COLLATE utf8_unicode_ci,
+                `clink` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
+                `nis_read` tinyint(1) NOT NULL DEFAULT '0',
+                `ddate_created` datetime DEFAULT NULL,
+                `ddate_read` datetime DEFAULT NULL,
+                PRIMARY KEY (`nid`),
+                KEY `idx_dept_read` (`nid_dept`,`nis_read`),
+                KEY `idx_sub` (`nid_submission`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+            $ci->db->query($sql);
+        }
+
+        // Tự động dọn dẹp các bản ghi trùng lặp trước đó (nếu có)
+        @$ci->db->query("DELETE n1 FROM `" . $table_name . "` n1 
+            INNER JOIN `" . $table_name . "` n2 
+            WHERE n1.nid < n2.nid 
+            AND n1.nid_submission = n2.nid_submission 
+            AND n1.nid_dept = n2.nid_dept 
+            AND n1.ctype = n2.ctype 
+            AND n1.nid_submission > 0");
+    }
+}
+
+if (!function_exists('create_doc_notification')) {
+    function create_doc_notification($submission_id, $dept_id, $type, $title, $message, $link, $user_id = 0)
+    {
+        $ci =& get_instance();
+        $ci->load->database();
+        ensure_notification_table_exists();
+
+        $table = Fget_ap_table('tdoc_notification');
+
+        // Tránh ghi trùng lặp thông báo cho cùng 1 hồ sơ, phòng ban và loại thông báo
+        if ((int)$submission_id > 0) {
+            $existing = $ci->db->where('nid_submission', (int)$submission_id)
+                               ->where('nid_dept', (int)$dept_id)
+                               ->where('ctype', $type)
+                               ->get($table)->row_array();
+            if (!empty($existing)) {
+                return $existing['nid'];
+            }
+        }
+
+        $data = array(
+            'nid_submission' => (int)$submission_id,
+            'nid_dept'       => (int)$dept_id,
+            'nid_user'       => (int)$user_id,
+            'ctype'          => $type,
+            'ctitle'         => trim($title),
+            'cmessage'       => trim($message),
+            'clink'          => trim($link),
+            'nis_read'       => 0,
+            'ddate_created'  => date('Y-m-d H:i:s')
+        );
+        $ci->db->insert($table, $data);
+        return $ci->db->insert_id();
+    }
+}
+
+if (!function_exists('Fdoc_time_ago')) {
+    function Fdoc_time_ago($datetime) {
+        $time = strtotime($datetime);
+        if (!$time) return '';
+        $diff = time() - $time;
+        if ($diff < 60) return 'Vừa xong';
+        if ($diff < 3600) return floor($diff / 60) . ' phút trước';
+        if ($diff < 86400) return floor($diff / 3600) . ' giờ trước';
+        if ($diff < 259200) return floor($diff / 86400) . ' ngày trước';
+        return date('d/m/Y H:i', $time);
+    }
+}
+
+if (!function_exists('get_staff_notifications')) {
+    function get_staff_notifications($staff_user_id = 0, $limit = 15)
+    {
+        $ci =& get_instance();
+        $ci->load->database();
+        ensure_notification_table_exists();
+
+        $user_dept = 0;
+        $is_admin = false;
+        if ($staff_user_id > 0) {
+            $user_row = $ci->db->where('nid', $staff_user_id)->get(Fget_ap_table('tuser'))->row_array();
+            if (!empty($user_row)) {
+                $user_dept = isset($user_row['nid_dept']) ? (int)$user_row['nid_dept'] : 0;
+                $user_type = isset($user_row['nid_user_type']) ? (int)$user_row['nid_user_type'] : 0;
+                if ($user_type == 1 || (isset($user_row['crole']) && $user_row['crole'] == 'admin')) {
+                    $is_admin = true;
+                }
+            }
+        }
+        if (function_exists('has_staff_role') && has_staff_role('admin')) {
+            $is_admin = true;
+        }
+
+        $table = Fget_ap_table('tdoc_notification');
+
+        $where = " WHERE 1=1 ";
+        if ($is_admin) {
+            // Admin chỉ nhận thông báo hệ thống / toàn cục (nid_dept = 0)
+            $where .= " AND nid_dept = 0 ";
+        } elseif ($user_dept > 0) {
+            // Nhân viên phòng ban chỉ nhận thông báo gửi cho phòng ban mình
+            $where .= " AND nid_dept = " . (int)$user_dept . " ";
+        } else {
+            $where .= " AND nid_dept = 0 ";
+        }
+
+        // Đếm số lượng chưa đọc
+        $count_query = "SELECT COUNT(*) as unread_count FROM " . $table . " " . $where . " AND nis_read = 0";
+        $count_res = $ci->db->query($count_query)->row_array();
+        $unread_count = !empty($count_res['unread_count']) ? (int)$count_res['unread_count'] : 0;
+
+        // Lấy danh sách thông báo mới nhất
+        $list_query = "SELECT * FROM " . $table . " " . $where . " ORDER BY nid DESC LIMIT " . (int)$limit;
+        $items = $ci->db->query($list_query)->result_array();
+
+        if (!empty($items)) {
+            foreach ($items as &$item) {
+                $item['time_ago'] = Fdoc_time_ago($item['ddate_created']);
+            }
+        }
+
+        return array(
+            'unread_count' => $unread_count,
+            'items'        => $items
+        );
+    }
+}
+
+if (!function_exists('mark_notification_as_read')) {
+    function mark_notification_as_read($notif_id = 0, $staff_user_id = 0)
+    {
+        $ci =& get_instance();
+        $ci->load->database();
+        ensure_notification_table_exists();
+
+        $table = Fget_ap_table('tdoc_notification');
+        if ((int)$notif_id > 0) {
+            $ci->db->where('nid', (int)$notif_id)->update($table, array(
+                'nis_read'   => 1,
+                'ddate_read' => date('Y-m-d H:i:s')
+            ));
+        } else {
+            // Đánh dấu tất cả đã đọc
+            $user_dept = 0;
+            $is_admin = false;
+            if ($staff_user_id > 0) {
+                $user_row = $ci->db->where('nid', $staff_user_id)->get(Fget_ap_table('tuser'))->row_array();
+                if (!empty($user_row)) {
+                    $user_dept = isset($user_row['nid_dept']) ? (int)$user_row['nid_dept'] : 0;
+                    $user_type = isset($user_row['nid_user_type']) ? (int)$user_row['nid_user_type'] : 0;
+                    if ($user_type == 1 || (isset($user_row['crole']) && $user_row['crole'] == 'admin')) {
+                        $is_admin = true;
+                    }
+                }
+            }
+            if (function_exists('has_staff_role') && has_staff_role('admin')) {
+                $is_admin = true;
+            }
+
+            if ($is_admin) {
+                $ci->db->where('nid_dept', 0);
+            } elseif ($user_dept > 0) {
+                $ci->db->where('nid_dept', (int)$user_dept);
+            } else {
+                $ci->db->where('nid_dept', 0);
+            }
+            $ci->db->where('nis_read', 0);
+            $ci->db->update($table, array(
+                'nis_read'   => 1,
+                'ddate_read' => date('Y-m-d H:i:s')
+            ));
+        }
+        return true;
+    }
+}
+

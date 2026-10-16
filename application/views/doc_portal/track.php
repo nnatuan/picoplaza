@@ -224,53 +224,50 @@
     <div class="track-card">
         <div class="track-header">
             <div>
-                <div style="font-size:13px; color:#94a3b8;">HỒ SƠ THẨM ĐỊNH TRỰC TUYẾN</div>
+                <div style="font-size:13px; color:#94a3b8;">HỒ SƠ TRỰC TUYẾN</div>
                 <div class="code-title">#<?php echo htmlspecialchars($doc['ccode']); ?></div>
             </div>
             <div>
                 <?php 
                     $st = $doc['cstatus'];
+                    if ($st == 'WAITING_ADMIN') {
+                        $st = 'COMPLETED';
+                    }
                     $st_class = strtolower($st);
                     $st_label = 'Đang thẩm định';
                     if ($st == 'IN_REVIEW') $st_label = 'Đang Thẩm Định (Phòng Ban)';
-                    elseif ($st == 'WAITING_ADMIN') $st_label = 'Chờ Admin Phê Duyệt';
-                    elseif ($st == 'COMPLETED') $st_label = 'Hoàn Tất - Đã Xác Nhận';
+                    elseif ($st == 'COMPLETED') $st_label = 'Hoàn Tất - Đã Thông Qua';
                     elseif ($st == 'REJECTED') $st_label = 'Từ Chối Thẩm Định';
                 ?>
                 <span class="status-tag <?php echo $st_class; ?>"><?php echo $st_label; ?></span>
             </div>
         </div>
 
-        <!-- Stepper tiến độ -->
+        <!-- Stepper tiến độ (3 bước: Khởi tạo -> Thẩm định phòng ban -> Cấp văn bản xác nhận) -->
         <div class="track-stepper">
             <div class="stepper-step done">
                 <div class="stepper-circle"><i class="fa-solid fa-check"></i></div>
                 <div class="stepper-label">1. Khởi tạo & Upload</div>
             </div>
 
-            <div class="stepper-step <?php echo ($st == 'IN_REVIEW' ? 'active' : (($st == 'WAITING_ADMIN' || $st == 'COMPLETED') ? 'done' : ($st == 'REJECTED' ? 'failed' : ''))); ?>">
-                <div class="stepper-circle"><?php echo ($st == 'WAITING_ADMIN' || $st == 'COMPLETED') ? '<i class="fa-solid fa-check"></i>' : ($st == 'REJECTED' ? '<i class="fa-solid fa-xmark"></i>' : '2'); ?></div>
+            <div class="stepper-step <?php echo ($st == 'IN_REVIEW' ? 'active' : ($st == 'COMPLETED' ? 'done' : ($st == 'REJECTED' ? 'failed' : ''))); ?>">
+                <div class="stepper-circle"><?php echo ($st == 'COMPLETED') ? '<i class="fa-solid fa-check"></i>' : ($st == 'REJECTED' ? '<i class="fa-solid fa-xmark"></i>' : '2'); ?></div>
                 <div class="stepper-label">2. Thẩm định phòng ban</div>
             </div>
 
-            <div class="stepper-step <?php echo ($st == 'WAITING_ADMIN' ? 'active' : ($st == 'COMPLETED' ? 'done' : ($st == 'REJECTED' ? 'failed' : ''))); ?>">
-                <div class="stepper-circle"><?php echo ($st == 'COMPLETED') ? '<i class="fa-solid fa-check"></i>' : '3'; ?></div>
-                <div class="stepper-label">3. Admin phê duyệt</div>
-            </div>
-
             <div class="stepper-step <?php echo ($st == 'COMPLETED' ? 'done' : ''); ?>">
-                <div class="stepper-circle"><?php echo ($st == 'COMPLETED') ? '<i class="fa-solid fa-award"></i>' : '4'; ?></div>
-                <div class="stepper-label">4. Cấp văn bản xác nhận</div>
+                <div class="stepper-circle"><?php echo ($st == 'COMPLETED') ? '<i class="fa-solid fa-award"></i>' : '3'; ?></div>
+                <div class="stepper-label">3. Cấp văn bản xác nhận</div>
             </div>
         </div>
 
         <div class="track-body">
             <!-- Thông báo trạng thái đặc biệt -->
-            <?php if ($doc['cstatus'] == 'COMPLETED'): ?>
+            <?php if ($st == 'COMPLETED'): ?>
                 <div style="background:#ecfdf5; border:2px solid #10b981; border-radius:14px; padding:24px; margin-bottom:28px; text-align:center;">
                     <div style="font-size:36px; margin-bottom:8px; color:#10b981;"><i class="fa-solid fa-circle-check"></i></div>
-                    <h3 style="color:#065f46; font-size:20px; font-weight:800; margin:0 0 6px;">HỒ SƠ ĐÃ ĐƯỢC PHÊ DUYỆT THÀNH CÔNG</h3>
-                    <p style="color:#047857; font-size:14.5px; margin:0 0 16px;">Văn bản chính thức đã được ký duyệt xác nhận bởi Ban Quản Trị Pico Plaza.</p>
+                    <h3 style="color:#065f46; font-size:20px; font-weight:800; margin:0 0 6px;">HỒ SƠ ĐÃ ĐƯỢC THẨM ĐỊNH THÔNG QUA</h3>
+                    <p style="color:#047857; font-size:14.5px; margin:0 0 16px;">Tất cả các phòng ban chuyên môn đã phê duyệt hoàn tất hồ sơ của Quý khách.</p>
                     <?php if (!empty($doc['cfile_approved'])): ?>
                         <a href="<?php echo base_url($doc['cfile_approved']); ?>" target="_blank" download style="display:inline-block; background:#10b981; color:#fff; font-weight:800; padding:12px 28px; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(16,185,129,0.3);"><i class="fa-solid fa-file-pdf" style="margin-right: 6px;"></i> TẢI VĂN BẢN ĐÃ XÁC NHẬN (OFFICIAL PDF)</a>
                     <?php else: ?>
@@ -309,12 +306,22 @@
                 </div>
             </div>
 
-            <!-- Ma trận thẩm định song song của các phòng ban -->
+            <!-- Ma trận thẩm định song song của các phòng ban có quyền duyệt -->
             <div class="dept-matrix-box">
                 <h4 style="font-size:16px; font-weight:800; color:#0f172a; margin-bottom:12px;"><i class="fa-solid fa-building" style="color: #ea580c; margin-right: 6px;"></i> Tiến Độ Thẩm Định Tại Các Phòng Ban Chuyên Môn</h4>
                 <div class="dept-card-grid">
-                    <?php if (!empty($steps)): ?>
-                        <?php foreach ($steps as $step): ?>
+                    <?php 
+                        $approve_steps = array();
+                        if (!empty($steps)) {
+                            foreach ($steps as $st) {
+                                if (!isset($st['cpermission']) || $st['cpermission'] !== 'VIEW') {
+                                    $approve_steps[] = $st;
+                                }
+                            }
+                        }
+                    ?>
+                    <?php if (!empty($approve_steps)): ?>
+                        <?php foreach ($approve_steps as $step): ?>
                             <?php 
                                 $step_st = $step['cstep_status'];
                                 $card_class = strtolower($step_st);
@@ -342,6 +349,10 @@
                                 <?php endif; ?>
                             </div>
                         <?php endforeach; ?>
+                    <?php else: ?>
+                        <div style="color: #64748b; font-size: 13.5px; font-style: italic; padding: 12px; background: #f8fafc; border-radius: 8px; width: 100%;">
+                            <i class="fa-solid fa-info-circle" style="color: #0284c7;"></i> Hồ sơ thuộc diện Admin duyệt trực tiếp, không qua phòng ban thẩm định.
+                        </div>
                     <?php endif; ?>
                 </div>
             </div>

@@ -4,7 +4,11 @@
 	//$this->load->view('modules/mod_header'); 
 	//$cf_logo = get_config_by_id(12);
 ?>
-
+<style>
+.login_content h1 {
+    font-size: 18px;
+}
+</style>	
 <body class="login">
     <div>
       <a class="hiddenanchor" id="signup"></a>
@@ -14,7 +18,7 @@
         <div class="animate form login_form">
           <section class="login_content">
             <form action="<?php echo $link_page; ?>" method="post" name="form_main">
-              <h1>CMS</h1>
+              <h1>PICO PLAZA</h1>
               <div>
                 <input type="text" name="txt_user_name" class="form-control" placeholder="ID tài khoản" required="" />
               </div>

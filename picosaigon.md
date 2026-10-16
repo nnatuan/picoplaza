@@ -13,7 +13,7 @@ flowchart TD
     A[Khách hàng] -->|1. Tải mẫu PDF & Ký thủ công| B[Scan / Chụp ảnh Upload]
     B -->|2. Nộp hồ sơ| C{Dynamic Routing Engine}
     
-    subgraph ParallelReview [Thẩm định song song đa phòng ban]
+    subgraph ParallelReview [Thẩm định song song tại các phòng ban phụ trách]
         C -->|Phân luồng| D1[Phòng Kinh Doanh]
         C -->|Phân luồng| D2[Phòng Kỹ Thuật]
         C -->|Phân luồng| D3[Phòng Kế Toán / BQL]
@@ -27,21 +27,16 @@ flowchart TD
         D3 -->|Approve| AP3[Xác nhận BQL]
     end
     
-    AP1 & AP2 & AP3 -->|Tất cả phòng ban đã Approved| WA[Trạng thái: WAITING_ADMIN]
+    AP1 & AP2 & AP3 -->|Tất cả phòng ban duyệt thông qua| CP[Trạng thái: COMPLETED - Hoàn Tất Hồ Sơ]
     
-    subgraph AdminReview [Phê duyệt cấp Quản trị]
-        WA --> SA{Admin}
-        SA -->|Approved| CP[Trạng thái: COMPLETED]
-        SA -->|Rejected| RJ2[Trạng thái: REJECTED]
-        
-        SA -.->|Force Approve / Force Reject| FO[Admin Override + Ghi chú Note]
-        FO -.-> CP
-        FO -.-> RJ2
+    subgraph EmergencyOverride [Cơ chế Can thiệp Khẩn cấp Admin]
+        AO{Admin Override}
+        AO -.->|Force Approve| CP
+        AO -.->|Force Reject| RJ
     end
     
     CP -->|Mở quyền tải| OUT[Tải văn bản chính thức có dấu 'Đã xác nhận']
-    RJ -->|Báo lỗi & sửa| A
-    RJ2 -->|Báo lỗi & sửa| A
+    RJ -->|Báo lỗi & sửa lại| A
 ```
 
 ---
@@ -58,47 +53,46 @@ Script nạp CSDL hoàn chỉnh được lưu tại: **[picoplaza_workflow.sql](
   * `DEPT_BQL`: Ban Quản Lý Tòa Nhà (Thẩm định an ninh, vệ sinh, phương án ra vào).
 
 ### **2.2. Bảng `picoplaza_tdoc_type` (Cấu hình loại hồ sơ & Luồng duyệt)**
-* Quản lý biểu mẫu chuẩn và danh sách phòng ban duyệt song song (`cdepts_required`).
-  * Ví dụ: Loại hồ sơ Đăng ký thi công yêu cầu phòng 2 (Kỹ thuật) và phòng 4 (Ban quản lý) duyệt song song (`cdepts_required = '2,4'`).
+* Quản lý biểu mẫu chuẩn và danh sách phòng ban:
+  * `cdepts_required`: Danh sách phòng ban có thẩm quyền **DUYỆT** (`cpermission = 'APPROVE'`).
+  * `cdepts_view`: Danh sách phòng ban **CHỈ XEM** (`cpermission = 'VIEW'`) để nắm bắt thông tin, phối hợp tác nghiệp.
 
 ### **2.3. Bảng `picoplaza_tdoc_submission` (Hồ sơ khách hàng nộp)**
 * Chứa toàn bộ thông tin hồ sơ:
   * `ccode`: Mã định danh hồ sơ (`HS-YYYYMM-XXXX`).
-  * `cstatus`: `INIT` $\rightarrow$ `IN_REVIEW` $\rightarrow$ `WAITING_ADMIN` $\rightarrow$ `COMPLETED` / `REJECTED`.
+  * `cstatus`: `INIT` $\rightarrow$ `IN_REVIEW` $\rightarrow$ `COMPLETED` / `REJECTED`.
   * `cfile_path`: Tệp scan/ảnh hồ sơ gốc khách hàng nộp.
   * `cfile_approved`: Tệp văn bản chính thức đã xác nhận cấp quyền cho khách hàng tải về.
   * `is_override`: Đánh dấu hồ sơ có sự can thiệp Admin Override.
   * `cadmin_note`: Ghi chú can thiệp của Quản trị viên.
 
 ### **2.4. Bảng `picoplaza_tdoc_approval_step` (Vết duyệt của từng phòng ban)**
-* Lưu trạng thái thẩm định độc lập của từng phòng ban: `PENDING`, `APPROVED`, `REJECTED` kèm lý do `creason_note` và thời gian thao tác.
+* Lưu trạng thái thẩm định độc lập của từng phòng ban: `PENDING`, `APPROVED`, `REJECTED` kèm phân quyền `cpermission` (`APPROVE` / `VIEW`), lý do `creason_note` và thời gian thao tác.
 
 ### **2.5. Bảng `picoplaza_tdoc_log` (Nhật ký kiểm toán / Audit Trail)**
 * Ghi lại lịch sử chi tiết mọi thao tác (Ai thao tác, IP nào, đổi trạng thái gì, nội dung ghi chú).
 
 ---
 
-## **3. QUY TRÌNH 4 BƯỚC VẬN HÀNH & WORKFLOW ENGINE**
+## **3. QUY TRÌNH 3 BƯỚC TINH GỌN & WORKFLOW ENGINE**
+
+> [!NOTE]
+> **Cập nhật quy trình mới theo yêu cầu khách hàng:** Lược bỏ hoàn toàn khâu Admin phê duyệt hồ sơ. Chỉ cần các phòng ban phụ trách có thẩm quyền phê duyệt thẩm định thông qua, hồ sơ tự động được chuyển sang trạng thái **`COMPLETED`** và cấp chứng nhận/văn bản xác nhận cho khách hàng.
 
 ### **Bước 1: Khởi tạo & Upload**
 * Khách hàng truy cập `/portal-tham-dinh` $\rightarrow$ Tải mẫu PDF chuẩn $\rightarrow$ Ký xác nhận $\rightarrow$ Scan/Chụp ảnh tải lên hệ thống.
 * Trạng thái hồ sơ chuyển sang **`IN_REVIEW`**.
 
-### **Bước 2: Thẩm định song song tại các phòng ban (Parallel Review)**
+### **Bước 2: Thẩm định song song tại các phòng ban phụ trách (Parallel Review)**
 * Hệ thống tự động phân phối hồ sơ đến Cổng thẩm định của các phòng ban được chỉ định (`/admin/do_dept_review_listview`).
 * **Quy tắc duyệt độc lập**:
   1. **Nếu 1 phòng ban Từ chối (Reject)**: Bắt buộc nhập lý do $\rightarrow$ Toàn bộ hồ sơ ngay lập tức chuyển sang **`REJECTED`** $\rightarrow$ Hệ thống tự động gửi email thông báo chi tiết lý do cho khách hàng.
-  2. **Nếu tất cả các phòng ban được chỉ định Phê duyệt (Approve)**: Hệ thống tự động kích hoạt chuyển trạng thái sang **`WAITING_ADMIN`** và bắn thông báo khẩn lên Telegram Bot nhóm Quản trị.
+  2. **Nếu tất cả các phòng ban có quyền duyệt (Approve) đã thông qua**: Hệ thống **tự động hoàn tất hồ sơ ngay lập tức** $\rightarrow$ Trạng thái chuyển thẳng sang **`COMPLETED`** $\rightarrow$ Gửi email thông báo hoàn tất cho khách hàng và bắn thông báo xác nhận lên Telegram Bot của Ban Quản Trị.
+  3. **Phòng ban chỉ xem (VIEW)**: Có thể truy cập xem nội dung hồ sơ và tiến độ thẩm định của các đơn vị khác, nhưng không can thiệp vào kết quả duyệt.
 
-### **Bước 3: Phê duyệt cấp Quản trị (Admin Review)**
-* Admin truy cập `/admin/do_doc_submission_listview` để kiểm tra tổng thể chữ ký/xác nhận từ các phòng ban.
-* Quyết định:
-  * **Thông qua (Approved)**: Tải lên văn bản chính thức có dấu xác nhận $\rightarrow$ Chuyển trạng thái **`COMPLETED`**.
-  * **Từ chối (Rejected)**: Nhập lý do từ chối $\rightarrow$ Chuyển trạng thái **`REJECTED`**.
-
-### **Bước 4: Trả kết quả**
-* Trạng thái chuyển thành **`COMPLETED`**.
-* Mở nút tải văn bản chính thức với ghi chú *"Đã xác nhận"* tại trang theo dõi `/portal-tham-dinh/theo-doi/:code`.
+### **Bước 3: Hoàn tất & Trả kết quả (Cấp văn bản xác nhận)**
+* Hồ sơ đạt trạng thái **`COMPLETED`**.
+* Khách hàng tra cứu tại `/portal-tham-dinh/theo-doi/:code`: Hiển thị Stepper hoàn tất 3 bước, mở nút tải văn bản chính thức với ghi chú *"Đã thông qua thẩm định"* kèm tệp đính kèm.
 
 ---
 
@@ -155,5 +149,26 @@ Quản trị viên (Admin) được trang bị quyền can thiệp cưỡng ch�
    * URL Nộp hồ sơ: `http://localhost/picoplaza/portal-tham-dinh/nop-ho-so`
 3. **Truy cập Quản trị CMS**:
    * URL Cổng Thẩm định Phòng ban: `http://localhost/picoplaza/admin/index.php/do_dept_review_listview`
-   * URL Quản trị Admin: `http://localhost/picoplaza/admin/index.php/do_doc_submission_listview`
    * URL Cấu hình Loại Hồ Sơ & Biểu Mẫu: `http://localhost/picoplaza/admin/index.php/do_doc_type_listview`
+
+---
+
+## **7. NHẬT KÝ CẬP NHẬT QUY TRÌNH (CHANGELOG)**
+
+### **Phiên bản cập nhật - Tinh gọn quy trình duyệt (Theo yêu cầu khách hàng)**:
+1. **Lược bỏ khâu Quản trị Admin phê duyệt hồ sơ**:
+   - Loại bỏ trạng thái trung gian `WAITING_ADMIN` ("Chờ Admin Duyệt").
+   - Khi tất cả phòng ban phụ trách có thẩm quyền (`cpermission = 'APPROVE'`) thẩm định thông qua, hệ thống **tự động chuyển trạng thái hồ sơ sang `COMPLETED`** ngay lập tức.
+   - Tự động ghi log chuyển đổi hoàn tất và gửi email thông báo kết quả phê duyệt cho khách hàng kèm đường dẫn tải văn bản chính thức.
+   - Bắn thông báo xác nhận hoàn tất lên Telegram Bot cho Ban Quản Trị theo dõi.
+2. **Cập nhật giao diện Khách hàng (Frontend Portal)**:
+   - Stepper tiến độ rút ngắn từ 4 bước thành **3 bước chuẩn**: `1. Khởi tạo & Upload` $\rightarrow$ `2. Thẩm định phòng ban` $\rightarrow$ `3. Cấp văn bản xác nhận`. Bỏ hoàn toàn bước 3 "Admin phê duyệt".
+   - Badge trạng thái hồ sơ hiển thị nhãn xanh `HOÀN TẤT - ĐÃ THÔNG QUA` (hoặc `ĐÃ DUYỆT`), không còn badge cam `CHỜ ADMIN PHÊ DUYỆT`.
+   - Ngay khi các phòng ban duyệt xong, hộp thông báo thành công và nút tải văn bản đã xác nhận được mở tức thì cho khách hàng.
+3. **Cập nhật giao diện Quản trị CMS (Backend)**:
+   - Ẩn mục menu `Quản Trị Phê Duyệt Hồ Sơ` khỏi sidebar menu theo yêu cầu.
+   - Loại bỏ khung form thao tác duyệt/từ chối cấp Admin trong trang chi tiết hồ sơ (`detail.php`).
+   - Cột trạng thái trong danh sách hồ sơ cập nhật đồng bộ tag xanh `HOÀN TẤT`.
+4. **Cơ chế Tự động Dọn dẹp & Chuyển đổi Dữ liệu cũ (Auto-migration)**:
+   - Bổ sung hàm `ensure_workflow_legacy_cleanup()` tự động phát hiện và chuyển đổi tất cả hồ sơ cũ đang ở trạng thái `WAITING_ADMIN` sang `COMPLETED`, đảm bảo tính nhất quán trên toàn bộ hệ thống ngay khi truy cập.
+

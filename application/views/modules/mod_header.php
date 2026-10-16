@@ -69,9 +69,9 @@
           </button>
           
           <ul class="user-dropdown-menu" id="userDropdownMenu">
-            <li><a href="<?php echo base_url(); ?>profile"><i class="fa-regular fa-id-card"></i> Trang cá nhân</a></li>
-            <li><a href="<?php echo base_url(); ?>doc_portal"><i class="fa-solid fa-folder-tree"></i> Hồ sơ thẩm định</a></li>
-			<li><a href="<?php echo base_url(); ?>my_tickets"><i class="fa-solid fa-ticket"></i> Ticket của tôi</a></li>
+            <li><a href="<?php echo base_url(); ?>profile"><i class="fa-regular fa-id-card"></i> Tài khoản</a></li>
+            <li><a href="<?php echo base_url(); ?>doc_portal"><i class="fa-solid fa-folder-tree"></i> Hồ sơ đăng ký</a></li>
+			<li><a href="<?php echo base_url(); ?>my_tickets"><i class="fa-solid fa-ticket"></i> Phiếu góp ý</a></li>
             <li class="divider"></li>
             <li><a href="<?php echo base_url(); ?>auth/logout" class="logout-link"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a></li>
           </ul>

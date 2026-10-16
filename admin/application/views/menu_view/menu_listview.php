@@ -16,19 +16,14 @@
                                 <div class="col-sm-12">
                                     <div class="card-box table-responsive">
                                         
-                                        <div class="top-filter" style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-                                            <a href="<?php echo base_url(); ?>index.php/do_menu/f_add" class="btn btn-success" style="margin: 0;"><i class="fa fa-plus"></i> Thêm mới Menu</a>
-                                            
-                                            <input name="btn_delete" type="button" class="btn btn-danger" value="Xóa các mục đã chọn"  
-                                                   onclick="js_CheckValidBeforeDeleteListview(this.form,'chkItems','Bạn có chắc chắn muốn xóa không?','Vui lòng chọn ít nhất 1 mục để xóa!')" />
+                                        <div class="top-filter qcare-top-filter" style="margin-bottom: 15px; text-align: right;">
+                                            <a href="<?php echo base_url(); ?>index.php/do_menu/f_add" class="btn btn-primary" style="margin: 0;">Thêm mới Menu</a>
                                         </div>
 
                                         <table id="datatable" class="table table-striped table-bordered" style="width:100%">
                                             <thead>
                                                 <tr>
-                                                    <th style="width: 50px;" class="text-center">
-                                                        <input name="chkItems" type="checkbox" class="checkbox" onclick="js_CheckAllClick(this,this.name);" />
-                                                    </th>
+                                                    <th style="width: 60px;" class="text-center">STT</th>
                                                     <th>Tiêu đề Menu</th>
                                                     <th>Link</th>
                                                     <th style="width: 100px;" class="text-center">Chỉ mục</th>
@@ -39,9 +34,7 @@
                                             <tbody>
                                                 <?php if(!empty($data_view)): $i=1; foreach($data_view as $data): ?>
                                                 <tr>
-                                                    <td class="text-center">
-                                                        <input name="chk[]" type="checkbox" value="<?php echo $data['nid']; ?>" id="chkItems" class="checkbox" onclick="js_CheckItemClick(this, 'chkItems','chkItems');" />
-                                                    </td>
+                                                    <td class="text-center"><?php echo $i++; ?></td>
                                                     <td>
                                                         <a href="<?php echo base_url() . 'index.php/do_menu/f_edit/' . $data['nid']; ?>" style="font-weight: 700; color: #1d4ed8;">
                                                             <?php echo Fview_text($data['ctitle']); ?>

@@ -344,7 +344,7 @@
             <div>
                 <h1 class="hero-title">
                     <i class="fa-solid fa-folder-tree" style="color: #ea580c;"></i>
-                    Hồ Sơ Thẩm Định Của Bạn
+                     Hồ sơ đăng ký của bạn
                 </h1>
                 <p class="hero-subtitle">Xin chào <strong><?php echo htmlspecialchars($member_name); ?></strong>! Theo dõi tiến độ duyệt hồ sơ trực tuyến từ các phòng ban Pico Plaza và nộp hồ sơ mới nhanh chóng.</p>
             </div>
@@ -462,12 +462,10 @@
                                 <td style="text-align: center; white-space: nowrap;">
                                     <?php 
                                         $mst = $sub['cstatus'];
-                                        if ($mst == 'COMPLETED') {
+                                        if ($mst == 'COMPLETED' || $mst == 'WAITING_ADMIN') {
                                             echo '<span style="background:#dcfce7; color:#166534; font-weight:800; padding:5px 12px; border-radius:20px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle-check"></i> ĐÃ DUYỆT</span>';
                                         } elseif ($mst == 'REJECTED') {
                                             echo '<span style="background:#fee2e2; color:#991b1b; font-weight:800; padding:5px 12px; border-radius:20px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-circle-xmark"></i> TỪ CHỐI</span>';
-                                        } elseif ($mst == 'WAITING_ADMIN') {
-                                            echo '<span style="background:#fef3c7; color:#92400e; font-weight:800; padding:5px 12px; border-radius:20px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-hourglass-half"></i> CHỜ ADMIN DUYỆT</span>';
                                         } else {
                                             echo '<span style="background:#e0f2fe; color:#0369a1; font-weight:800; padding:5px 12px; border-radius:20px; font-size:12px; display:inline-flex; align-items:center; gap:4px;"><i class="fa-solid fa-spinner fa-spin"></i> ĐANG THẨM ĐỊNH</span>';
                                         }

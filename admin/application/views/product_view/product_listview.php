@@ -22,8 +22,9 @@
                             <div class="row">
                                 <div class="col-sm-12">
                                     <div class="card-box table-responsive">
-                                        <div class="top-filter" style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
-                                            <a href="<?php echo base_url(); ?>index.php/do_product/f_add" class="btn btn-success" style="margin: 0;"><i class="fa fa-plus"></i> Thêm bài mới</a>
+                                        <div class="top-filter qcare-top-filter" style="margin-bottom: 15px; text-align: right;">
+                                            <a href="<?php echo base_url(); ?>index.php/do_product/f_add" class="btn btn-primary" style="margin: 0;">Thêm mới bài đăng</a>
+                                            <input type="hidden" name="hidden_button" id="hidden_button"/>
                                         </div>
                                         
                                         <table id="datatable" class="table table-striped table-bordered" style="width:100%">

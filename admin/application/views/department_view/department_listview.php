@@ -6,16 +6,6 @@
 
 <div class="right_col" role="main">
     <div class="">
-        <div class="page-title">
-            <div class="title_left">
-                <h3><small></small></h3>
-            </div>
-            <div class="title_right text-right" style="margin-bottom: 10px;">
-                <a href="<?php echo base_url('index.php/do_department/f_add'); ?>" class="btn btn-info btn-sm" style="float: right;">
-                    <i class="fa fa-plus"></i> Thêm Phòng Ban Mới
-                </a>
-            </div>
-        </div>
         <div class="clearfix"></div>
 
         <?php if(isset($_SESSION['flash_msg'])): ?>
@@ -40,14 +30,21 @@
                         <div class="clearfix"></div>
                     </div>
                     <div class="x_content">
-                        <!-- Form tìm kiếm -->
-                        <form method="GET" action="<?php echo base_url('index.php/do_department_listview'); ?>" class="form-inline" style="margin-bottom: 20px; gap: 10px; display: flex;">
-                            <input type="text" name="keyword" value="<?php echo htmlspecialchars($search); ?>" class="form-control" placeholder="Tìm theo tên hoặc mã phòng ban..." style="width: 320px;">
-                            <button type="submit" class="btn btn-info btn-sm" style="margin-bottom:0;"><i class="fa fa-search"></i> Tìm Kiếm</button>
-                            <?php if(!empty($search)): ?>
-                                <a href="<?php echo base_url('index.php/do_department_listview'); ?>" class="btn btn-default btn-sm" style="margin-bottom:0;">Xem tất cả</a>
-                            <?php endif; ?>
-                        </form>
+                        <!-- Form tìm kiếm & Nút thêm mới phòng ban chuẩn đồng bộ hệ thống -->
+                        <div class="top-filter qcare-top-filter" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                            <form method="GET" action="<?php echo base_url('index.php/do_department_listview'); ?>" class="form-inline" style="gap: 10px; display: flex; align-items: center; margin: 0;">
+                                <input type="text" name="keyword" value="<?php echo htmlspecialchars($search); ?>" class="form-control" placeholder="Tìm theo tên hoặc mã phòng ban..." style="width: 320px;">
+                                <button type="submit" class="btn btn-info btn-sm" style="margin-bottom:0;"><i class="fa fa-search"></i> Tìm Kiếm</button>
+                                <?php if(!empty($search)): ?>
+                                    <a href="<?php echo base_url('index.php/do_department_listview'); ?>" class="btn btn-default btn-sm" style="margin-bottom:0;">Xem tất cả</a>
+                                <?php endif; ?>
+                            </form>
+                            <div>
+                                <a href="<?php echo base_url('index.php/do_department/f_add'); ?>" class="btn btn-primary" style="margin-bottom: 0;">
+                                    Thêm mới phòng ban
+                                </a>
+                            </div>
+                        </div>
 
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered" style="width:100%">

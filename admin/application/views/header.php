@@ -33,7 +33,7 @@
 	  
 	  
 		<link href="<?php echo base_url(); ?>css/my_style.css?v<?php echo time(); ?>" rel="stylesheet">
-		<link href="<?php echo base_url(); ?>css/responsive_style.css?v=1.0.0" rel="stylesheet">
+		<link href="<?php echo base_url(); ?>css/responsive_style.css?v=<?php echo time(); ?>" rel="stylesheet">
 		
 		<script type="text/javascript">
 		function locdau(str) {  

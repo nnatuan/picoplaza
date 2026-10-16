@@ -6,38 +6,34 @@
 
 <div class="right_col" role="main">
     <div class="">
-        <div class="page-title">
-            <div class="title_left">
-                <h3><small></small></h3>
-            </div>
-        </div>
         <div class="clearfix"></div>
 
         <div class="row">
             <div class="col-md-12 col-sm-12">
                 <div class="x_panel">
                     <div class="x_title">
-                        <h2>QUẢN TRỊ TỔNG THỂ HỒ SƠ & PHÊ DUYỆT (ADMIN)</h2>
+                        <h2>QUẢN TRỊ TỔNG THỂ HỒ SƠ THẨM ĐỊNH (ADMIN)</h2>
                         <ul class="nav navbar-right panel_toolbox">
                             <li><a class="collapse-link"><i class="fa fa-chevron-up"></i></a></li>
                         </ul>
                         <div class="clearfix"></div>
                     </div>
                     <div class="x_content">
-                        <!-- Bộ lọc hồ sơ -->
-                        <form method="GET" action="<?php echo base_url('index.php/do_doc_submission_listview'); ?>" class="form-inline" style="margin-bottom: 20px; gap: 10px; display: flex; flex-wrap: wrap;">
-                            <input type="text" name="code" value="<?php echo htmlspecialchars($filter_code); ?>" class="form-control" placeholder="Mã hồ sơ hoặc tên khách..." style="width: 250px;">
+                        <!-- Bộ lọc hồ sơ chuẩn đồng bộ hệ thống -->
+                        <div class="top-filter qcare-top-filter" style="text-align: left; margin-bottom: 20px;">
+                            <form method="GET" action="<?php echo base_url('index.php/do_doc_submission_listview'); ?>" class="form-inline" style="gap: 10px; display: flex; flex-wrap: wrap; align-items: center; margin: 0;">
+                                <input type="text" name="code" value="<?php echo htmlspecialchars($filter_code); ?>" class="form-control" placeholder="Mã hồ sơ hoặc tên khách..." style="width: 250px;">
 
-                            <select name="status" class="form-control">
-                                <option value="">-- Tất cả trạng thái --</option>
-                                <option value="IN_REVIEW" <?php if($filter_status == 'IN_REVIEW') echo 'selected'; ?>>Đang thẩm định phòng ban</option>
-                                <option value="WAITING_ADMIN" <?php if($filter_status == 'WAITING_ADMIN') echo 'selected'; ?>>Chờ Admin duyệt</option>
-                                <option value="COMPLETED" <?php if($filter_status == 'COMPLETED') echo 'selected'; ?>>Hoàn tất (Đã duyệt)</option>
-                                <option value="REJECTED" <?php if($filter_status == 'REJECTED') echo 'selected'; ?>>Bị từ chối</option>
-                            </select>
+                                <select name="status" class="form-control">
+                                    <option value="">-- Tất cả trạng thái --</option>
+                                    <option value="IN_REVIEW" <?php if($filter_status == 'IN_REVIEW') echo 'selected'; ?>>Đang thẩm định phòng ban</option>
+                                    <option value="COMPLETED" <?php if($filter_status == 'COMPLETED') echo 'selected'; ?>>Hoàn tất (Đã duyệt)</option>
+                                    <option value="REJECTED" <?php if($filter_status == 'REJECTED') echo 'selected'; ?>>Bị từ chối</option>
+                                </select>
 
-                            <button type="submit" class="btn btn-primary" style="margin-bottom:0;"><i class="fa fa-search"></i> Tìm kiếm & Lọc</button>
-                        </form>
+                                <button type="submit" class="btn btn-primary" style="margin-bottom:0;"><i class="fa fa-search"></i> Tìm kiếm & Lọc</button>
+                            </form>
+                        </div>
 
                         <div class="table-responsive">
                             <table class="table table-striped table-bordered" style="width:100%">
@@ -76,10 +72,8 @@
                                                     </span>
                                                 </td>
                                                 <td style="text-align: center;">
-                                                    <?php if($row['cstatus'] == 'COMPLETED'): ?>
+                                                    <?php if($row['cstatus'] == 'COMPLETED' || $row['cstatus'] == 'WAITING_ADMIN'): ?>
                                                         <span class="badge badge-success"><i class="fa fa-check"></i> HOÀN TẤT</span>
-                                                    <?php elseif($row['cstatus'] == 'WAITING_ADMIN'): ?>
-                                                        <span class="badge badge-danger" style="background:#ea580c;"><i class="fa fa-hourglass-half"></i> CHỜ ADMIN DUYỆT</span>
                                                     <?php elseif($row['cstatus'] == 'IN_REVIEW'): ?>
                                                         <span class="badge badge-primary" style="background:#0284c7;"><i class="fa fa-clock-o"></i> ĐANG THẨM ĐỊNH</span>
                                                     <?php elseif($row['cstatus'] == 'REJECTED'): ?>
@@ -91,8 +85,8 @@
                                                 </td>
                                                 <td style="text-align: center;">
                                                     <a href="<?php echo base_url('index.php/do_doc_submission/detail/' . $row['nid']); ?>" 
-                                                       class="btn btn-warning btn-xs btn-action" title="Quản trị hồ sơ">
-                                                        <i class="fa fa-cog"></i> Quản Trị
+                                                       class="btn btn-info btn-xs btn-action" title="Xem chi tiết hồ sơ">
+                                                        <i class="fa fa-eye"></i> Chi Tiết
                                                     </a>
                                                 </td>
                                             </tr>

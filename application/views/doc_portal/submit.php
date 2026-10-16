@@ -140,7 +140,7 @@
 
     <div class="form-card">
         <div class="form-head">
-            <h1><i class="fa-solid fa-file-circle-plus"></i> Nộp Hồ Sơ Thẩm Định Trực Tuyến</h1>
+            <h1><i class="fa-solid fa-file-circle-plus"></i> Nộp Hồ Sơ Trực Tuyến</h1>
             <p>Hồ sơ sẽ được tự động liên kết vào tài khoản thành viên của bạn và chuyển tới các phòng ban thẩm định chuyên môn.</p>
         </div>
 
@@ -196,12 +196,12 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label">Tiêu Đề Hồ Sơ / Mã Mặt Bằng Gian Hàng <span class="req">*</span></label>
+                <label class="form-label">Tiêu Đề Hồ Sơ <span class="req">*</span></label>
                 <input type="text" name="txt_title" class="form-control" placeholder="VD: Đăng ký thi công cải tạo gian hàng Tầng 3 - L3-08" required>
             </div>
 
             <div class="form-group">
-                <label class="form-label">Ghi Chú Chi Tiết Cho Phòng Thẩm Định</label>
+                <label class="form-label">Ghi Chú Chi Tiết</label>
                 <textarea name="txt_note" class="form-control" rows="3" placeholder="Ghi chú thêm về thời gian dự kiến thi công, yêu cầu kỹ thuật đặc biệt..."></textarea>
             </div>
 
@@ -216,7 +216,7 @@
                 <input type="file" id="file_input" name="file_document" accept=".pdf,.jpg,.jpeg,.png" style="display:none;" onchange="showFileName(this)" required>
             </div>
 
-            <button type="submit" id="btn_submit_doc" class="btn-submit"><i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i> Gửi Hồ Sơ Thẩm Định Ngay</button>
+            <button type="submit" id="btn_submit_doc" class="btn-submit"><i class="fa-solid fa-paper-plane" style="margin-right: 8px;"></i> Gửi Hồ Sơ Ngay</button>
         </form>
     </div>
 </div>
@@ -227,7 +227,7 @@
         <div class="submit-spinner" style="width:54px; height:54px; border:4px solid rgba(234, 88, 12, 0.2); border-top-color:#ea580c; border-radius:50%; animation:spin-loader 0.8s linear infinite; margin-bottom:20px;"></div>
         <h3 style="color:#ffffff; font-size:19px; font-weight:800; margin:0 0 8px 0; letter-spacing:-0.3px;">Đang Xử Lý & Gửi Hồ Sơ...</h3>
         <p style="color:#94a3b8; font-size:13.5px; line-height:1.6; margin:0 0 14px 0;">
-            Hệ thống đang tải lên tệp đính kèm và gửi thông báo thẩm định tới các phòng ban phụ trách.
+            Hệ thống đang tải lên tệp đính kèm và gửi thông báo tới các phòng ban phụ trách.
         </p>
         <div style="background:rgba(234,88,12,0.12); border:1px dashed rgba(234,88,12,0.4); border-radius:8px; padding:8px 14px; font-size:12px; color:#fdba74;">
             <i class="fa-solid fa-hourglass-half"></i> Vui lòng giữ nguyên màn hình trong giây lát...

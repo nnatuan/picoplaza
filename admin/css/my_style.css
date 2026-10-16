@@ -2,17 +2,224 @@
 
 /* Đồng bộ Font Roboto chuẩn tiếng Việt cho toàn bộ hệ thống CMS */
 body, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
-.x_title h2, .site_title, button, input, select, textarea, .btn, .table, label, p {
+.x_title h2, .site_title, button, input, select, textarea, .btn, .table, label, p,
+#pico-toast-notification, #pico-notif-dropdown-menu {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
 }
 
 /* Đảm bảo toàn bộ icon FontAwesome và Glyphicon luôn giữ đúng font biểu tượng, không bị đè font */
-.fa, .fas, .far, .fab, [class^="fa-"], [class*=" fa-"] {
+.fa, .fas, .far, .fab, [class^="fa-"], [class*=" fa-"],
+#pico-notif-dropdown-menu .fa, #pico-notif-dropdown-menu i.fa,
+#pico-toast-notification .fa, #pico-toast-notification i.fa {
     font-family: 'FontAwesome' !important;
 }
 
 .glyphicon, [class^="glyphicon-"], [class*=" glyphicon-"], .sidebar-footer a span {
     font-family: 'Glyphicons Halflings' !important;
+}
+
+/* =================================================================
+   TOP NAV BAR & USER PROFILE / NOTIFICATION DROPDOWN FORMATTING
+   ================================================================= */
+.top_nav .nav_menu {
+    min-height: 57px;
+    height: 57px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 15px 0 0;
+    background: #ededed;
+    border-bottom: 1px solid #d9dee4;
+    position: relative;
+    float: none;
+}
+
+.top_nav .nav_menu .nav.toggle {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    float: none;
+}
+
+.top_nav .nav_menu .nav.toggle a#menu_toggle {
+    padding: 12px 18px;
+    color: #4b5563;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.top_nav .nav_menu nav.nav.navbar-nav {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    height: 100%;
+    margin: 0;
+    float: none;
+}
+
+.top_nav .nav_menu ul.navbar-right {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    height: 100% !important;
+    margin: 0 10px 0 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    width: auto !important;
+    float: none !important;
+}
+
+.top_nav .nav_menu ul.navbar-right > li {
+    display: flex !important;
+    align-items: center !important;
+    height: 100% !important;
+    float: none !important;
+    margin: 0 !important;
+    position: relative !important;
+}
+
+/* User profile button */
+.top_nav .user-profile-btn {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 4px 12px 4px 5px !important;
+    border-radius: 24px !important;
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    text-decoration: none !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+}
+.top_nav .user-profile-btn:hover {
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08) !important;
+}
+.top_nav .user-profile-btn img {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+}
+.top_nav .user-profile-btn span.user-name {
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    color: #1e293b !important;
+    line-height: 1.2 !important;
+}
+
+/* Ẩn dấu caret mặc định để tránh bị trùng 2 dấu mũi tên */
+.top_nav .user-profile.dropdown-toggle:after,
+.top_nav .user-profile .caret,
+.top_nav a.user-profile:after {
+    display: none !important;
+    content: none !important;
+}
+
+/* Modern Dropdown Menu for User */
+.top_nav .dropdown-menu.dropdown-usermenu {
+    position: absolute !important;
+    right: 0 !important;
+    left: auto !important;
+    min-width: 190px !important;
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15) !important;
+    border: 1px solid #e2e8f0 !important;
+    padding: 6px !important;
+    margin: 0 !important;
+    margin-top: 4px !important;
+    z-index: 99999 !important;
+}
+.top_nav .dropdown-menu.dropdown-usermenu .dropdown-item {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 9px 12px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #334155 !important;
+    border-radius: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.15s ease !important;
+}
+.top_nav .dropdown-menu.dropdown-usermenu .dropdown-item:hover {
+    background: #f1f5f9 !important;
+    color: #0284c7 !important;
+}
+.top_nav .dropdown-menu.dropdown-usermenu .dropdown-item.item-danger:hover {
+    background: #fef2f2 !important;
+    color: #ef4444 !important;
+}
+.top_nav .dropdown-menu.dropdown-usermenu .dropdown-divider {
+    height: 1px !important;
+    margin: 4px 0 !important;
+    background-color: #f1f5f9 !important;
+    border: none !important;
+}
+
+/* =================================================================
+   NOTIFICATION DROPDOWN & RESPONSIVE MOBILE
+   ================================================================= */
+#pico-notif-dropdown-wrapper {
+    position: relative !important;
+}
+
+#pico-notif-dropdown-menu {
+    position: absolute !important;
+    top: calc(100% + 4px) !important;
+    right: 0 !important;
+    left: auto !important;
+    width: 360px !important;
+    max-width: 90vw !important;
+    background: #ffffff !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 35px rgba(0,0,0,0.16) !important;
+    border: 1px solid #e2e8f0 !important;
+    z-index: 999999 !important;
+    overflow: hidden !important;
+}
+
+@media (max-width: 767px) {
+    .top_nav .nav_menu {
+        padding: 0 8px 0 0 !important;
+    }
+    .top_nav .nav_menu ul.navbar-right {
+        margin: 0 5px 0 0 !important;
+    }
+    .top_nav .user-profile-btn span.user-name {
+        max-width: 105px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+    #pico-notif-dropdown-menu {
+        position: fixed !important;
+        top: 60px !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        max-width: none !important;
+        border-radius: 14px !important;
+        box-shadow: 0 16px 45px rgba(0,0,0,0.3) !important;
+    }
+    #pico-notif-dropdown-menu #pico-notif-list-container {
+        max-height: 55vh !important;
+    }
+    #pico-toast-notification {
+        top: 65px !important;
+        bottom: auto !important;
+        left: 10px !important;
+        right: 10px !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: none !important;
+        padding: 14px 16px !important;
+    }
 }
 
 .cb:after {
@@ -22,6 +229,9 @@ body, h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6,
 }
 .required {
     color: red;
+}
+.page-title {
+    display: none;
 }
 .page-title .title_left h3 {
     opacity: 0;
@@ -112,12 +322,21 @@ td div.d-flex.align-items-center.justify-content-center span:last-child, th div.
 }
 
 .btn-action {
-    margin: 0 2px !important;
-    padding: 2px 6px !important;
+    margin: 2px 3px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    line-height: 1.3 !important;
+    border-radius: 4px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    white-space: nowrap !important;
+    text-decoration: none !important;
+}
+.btn-action i.fa {
     font-size: 11px !important;
-    line-height: 1.5 !important;
-    border-radius: 3px !important;
-    display: inline-block !important;
+    margin: 0 !important;
 }
 .qcare-form-section-title.section-blue {
     color: #2563eb;

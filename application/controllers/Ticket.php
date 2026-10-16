@@ -139,8 +139,10 @@ class Ticket extends CI_Controller
             }
 
             // 3. GỬI CẢNH BÁO TICKET MỚI VÀO NHÓM TELEGRAM ADMIN
-			$admin_group_id = get_value_by_config(24);
-            if (!empty($admin_group_id)) {
+            $admin_group_raw = get_value_by_config(24);
+            if (!empty($admin_group_raw)) {
+                $cms_url = (strpos(base_url(), '/admin') !== false) ? rtrim(base_url(), '/') : rtrim(base_url(), '/') . '/admin';
+
                 $tg_msg = "🎫 <b>[TICKET MỚI NHẬN TỪ KHÁCH HÀNG]</b>\n";
                 $tg_msg .= "🏷️ <b>Mã Ticket:</b> #" . $ticket_code . "\n";
                 $tg_msg .= "👤 <b>Thành viên gửi:</b> " . $this->m_txt_name . "\n";
@@ -151,9 +153,18 @@ class Ticket extends CI_Controller
                     $tg_msg .= "📎 <b>Tệp đính kèm:</b> Có gửi kèm chứng từ\n";
                 }
                 $tg_msg .= "⏰ <b>Thời gian:</b> " . date('d/m/Y H:i', strtotime($current_datetime)) . "\n";
-                $tg_msg .= "🔥 <i>Vui lòng đăng nhập CMS để phân công xử lý.</i>";
+                $tg_msg .= "🔥 <i>Vui lòng đăng nhập CMS để phân công xử lý <a href=\"" . htmlspecialchars($cms_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a>.</i>";
 
-                send_telegram_core($admin_group_id, $tg_msg);
+                // Trích xuất các ID group phân cách bởi dấu ; để gửi thông báo tới từng nhóm
+                $group_ids = explode(';', $admin_group_raw);
+                $sent_groups = array();
+                foreach ($group_ids as $gid) {
+                    $gid = trim($gid);
+                    if (!empty($gid) && !in_array($gid, $sent_groups)) {
+                        $sent_groups[] = $gid;
+                        send_telegram_core($gid, $tg_msg);
+                    }
+                }
             }
 
             // ĐIỀU HƯỚNG SANG TRANG CHI TIẾT TICKET RIÊNG BIỆT VỪA TẠO

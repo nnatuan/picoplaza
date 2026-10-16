@@ -295,7 +295,7 @@ class do_product_listview extends CI_Controller
     // Xây dựng chuỗi lọc Query WHERE khớp chuẩn CSDL rút gọn (Toàn quốc)
     private function get_where_string()
     {
-        $str_result = ' WHERE nid is not null AND cdel=0 ';
+        $str_result = ' WHERE nid is not null ';
         if ($this->m_txtf_ctitle != '')
             $str_result .= ' AND ctitle like "%' . trim($this->m_txtf_ctitle) . '%" ';
         if ($this->m_txtf_ccode != '')
@@ -345,16 +345,7 @@ class do_product_listview extends CI_Controller
     }	
 
 	function f_delete($nid) {
-        $this->m_nid_user_login = Fget_userdata('session_nid_user');
-
-        $data_delete = array(
-            'cdel'          => '1',
-            'niduser_updated' => $this->m_nid_user_login,
-            'dupdated_at' => date('Y-m-d H:i:s')
-        );
-
-        $res_delete = $this->db->where('nid', (int)$nid)->update('tproduct', $data_delete);
-
+        $this->product_model->delete_byid((int)$nid);
         redirect('do_product_listview');
     }	
 }

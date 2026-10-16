@@ -59,13 +59,10 @@ class Doc_portal extends CI_Controller
         if (!empty($my_submissions)) {
             foreach ($my_submissions as $sub) {
                 $st = strtoupper($sub['cstatus']);
-                if ($st == 'COMPLETED') {
+                if ($st == 'COMPLETED' || $st == 'WAITING_ADMIN') {
                     $stats['completed']++;
                 } elseif ($st == 'REJECTED') {
                     $stats['rejected']++;
-                } elseif ($st == 'WAITING_ADMIN') {
-                    $stats['waiting']++;
-                    $stats['in_progress']++;
                 } else {
                     $stats['in_progress']++;
                 }
@@ -93,7 +90,7 @@ class Doc_portal extends CI_Controller
             return;
         }
 
-        $data['title']         = 'Nộp Hồ Sơ Thẩm Định Mới — PICO PLAZA';
+        $data['title']         = 'Nộp Hồ Sơ Mới — PICO PLAZA';
         $data['tags']          = $this->tags;
         $data['description']   = $this->description;
         $data['menu_top']      = 'profile';
@@ -165,7 +162,7 @@ class Doc_portal extends CI_Controller
         $doc_code = workflow_submit_document($submit_data, false); // false để AJAX chạy ngầm thông báo, không làm chậm quá trình submit
 
         if ($doc_code) {
-            $_SESSION['doc_flash_success'] = 'Hồ sơ mã #' . $doc_code . ' đã được gửi thẩm định thành công!';
+            $_SESSION['doc_flash_success'] = 'Hồ sơ mã #' . $doc_code . ' đã được gửi thành công!';
             redirect(base_url() . 'doc_portal/track/' . $doc_code . '?just_submitted=1');
         } else {
             $_SESSION['doc_flash_error'] = 'Lỗi hệ thống trong quá trình gửi hồ sơ. Vui lòng liên hệ hỗ trợ!';
