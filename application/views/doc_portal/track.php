@@ -4,6 +4,14 @@
    $this->load->view('modules/mod_header');
 ?>
 
+<!-- Thư viện xử lý PDF trực tiếp phía trình duyệt để đóng dấu mộc đỏ -->
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script>
+if (typeof PDFLib === 'undefined') {
+    document.write('<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"><\/script>');
+}
+</script>
+
 <style>
 .doc-track-wrap {
     max-width: 1000px;
@@ -268,11 +276,17 @@
                     <div style="font-size:36px; margin-bottom:8px; color:#10b981;"><i class="fa-solid fa-circle-check"></i></div>
                     <h3 style="color:#065f46; font-size:20px; font-weight:800; margin:0 0 6px;">HỒ SƠ ĐÃ ĐƯỢC THẨM ĐỊNH THÔNG QUA</h3>
                     <p style="color:#047857; font-size:14.5px; margin:0 0 16px;">Tất cả các phòng ban chuyên môn đã phê duyệt hoàn tất hồ sơ của Quý khách.</p>
-                    <?php if (!empty($doc['cfile_approved'])): ?>
-                        <a href="<?php echo base_url($doc['cfile_approved']); ?>" target="_blank" download style="display:inline-block; background:#10b981; color:#fff; font-weight:800; padding:12px 28px; border-radius:8px; text-decoration:none; box-shadow:0 4px 12px rgba(16,185,129,0.3);"><i class="fa-solid fa-file-pdf" style="margin-right: 6px;"></i> TẢI VĂN BẢN ĐÃ XÁC NHẬN (OFFICIAL PDF)</a>
-                    <?php else: ?>
-                        <a href="<?php echo base_url($doc['cfile_path']); ?>" target="_blank" download style="display:inline-block; background:#10b981; color:#fff; font-weight:800; padding:12px 28px; border-radius:8px; text-decoration:none;"><i class="fa-solid fa-file-pdf" style="margin-right: 6px;"></i> TẢI HỒ SƠ ĐÃ XÁC NHẬN</a>
-                    <?php endif; ?>
+                    <a href="<?php echo base_url(!empty($doc['cfile_approved']) ? $doc['cfile_approved'] : $doc['cfile_path']); ?>" 
+                       id="btnDownloadApproved" 
+                       onclick="return handleDownloadApproved(event);" 
+                       data-file="<?php echo base_url($doc['cfile_path']); ?>"
+                       data-approved="<?php echo !empty($doc['cfile_approved']) ? base_url($doc['cfile_approved']) : ''; ?>"
+                       data-code="<?php echo htmlspecialchars($doc['ccode']); ?>"
+                       data-date="<?php echo !empty($doc['ddate_completed']) ? date('d/m/Y', strtotime($doc['ddate_completed'])) : date('d/m/Y'); ?>"
+                       data-save-url="<?php echo base_url('doc_portal/ajax_save_approved_file'); ?>"
+                       style="display:inline-flex; align-items:center; gap:8px; background:#10b981; color:#fff; font-weight:800; padding:13px 30px; border-radius:8px; text-decoration:none; box-shadow:0 4px 14px rgba(16,185,129,0.35); font-size:15px; cursor:pointer; transition:all 0.2s;">
+                        <i class="fa-solid fa-file-circle-check" id="btnDownloadIcon"></i> <span id="btnDownloadText">TẢI HỒ SƠ ĐÃ XÁC NHẬN</span>
+                    </a>
                 </div>
             <?php elseif ($doc['cstatus'] == 'REJECTED'): ?>
                 <div style="background:#fef2f2; border:2px solid #ef4444; border-radius:14px; padding:24px; margin-bottom:28px;">
@@ -398,6 +412,311 @@
 })();
 </script>
 <?php endif; ?>
+
+<!-- SCRIPT ĐÓNG DẤU MỘC ĐỎ "ĐÃ DUYỆT" TỰ ĐỘNG LÊN GÓC PHẢI TRÊN CỦA FILE -->
+<script type="text/javascript">
+/**
+ * Tạo con dấu mộc đỏ "ĐÃ DUYỆT" bằng HTML5 Canvas với độ phân giải cao (Retina/Print 300DPI)
+ */
+function generateRedStampDataUrl(docCode, approvedDate) {
+    var canvas = document.createElement('canvas');
+    var dpr = 2; // Nhân đôi độ phân giải để siêu nét khi in/phóng to
+    var stampW = 260;
+    var stampH = 110;
+    canvas.width = stampW * dpr;
+    canvas.height = stampH * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // 1. Nền mộc nhạt mờ tự nhiên (hiệu ứng mực đỏ thẩm thấu)
+    ctx.fillStyle = 'rgba(254, 242, 242, 0.55)';
+    drawStampRoundRect(ctx, 4, 4, stampW - 8, stampH - 8, 8, true, false);
+
+    // 2. Viền ngoài đôi
+    ctx.strokeStyle = '#c5221f';
+    ctx.lineWidth = 2.8;
+    drawStampRoundRect(ctx, 4, 4, stampW - 8, stampH - 8, 8, false, true);
+
+    // Viền trong nét thanh
+    ctx.strokeStyle = '#c5221f';
+    ctx.lineWidth = 1.1;
+    drawStampRoundRect(ctx, 9, 9, stampW - 18, stampH - 18, 5, false, true);
+
+    // 3. Tiêu đề đơn vị: BAN QUẢN LÝ PICO PLAZA
+    ctx.fillStyle = '#c5221f';
+    ctx.font = 'bold 11px Arial, "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('BAN QUẢN LÝ PICO PLAZA', stampW / 2, 25);
+
+    // Đường kẻ phân cách trên
+    ctx.strokeStyle = '#c5221f';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(20, 36);
+    ctx.lineTo(stampW - 20, 36);
+    ctx.stroke();
+
+    // 4. Chữ chính: ★ ĐÃ DUYỆT ★ (Dùng bold chuẩn + viền nét thanh đồng đều để chữ Ệ không bị lệch font)
+    ctx.font = 'bold 21px Arial, "Segoe UI", Tahoma, sans-serif';
+    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#c5221f';
+    ctx.strokeText('★ ĐÃ DUYỆT ★', stampW / 2, 58);
+    ctx.fillText('★ ĐÃ DUYỆT ★', stampW / 2, 58);
+
+    // Đường kẻ phân cách dưới
+    ctx.beginPath();
+    ctx.moveTo(20, 78);
+    ctx.lineTo(stampW - 20, 78);
+    ctx.stroke();
+
+    // 5. Dòng mã hồ sơ & Ngày duyệt
+    var dateStr = approvedDate || '<?php echo date("d/m/Y"); ?>';
+    var codeStr = docCode ? ('#' + docCode + '  •  ') : '';
+    ctx.font = 'bold 9.5px Arial, "Segoe UI", Tahoma, sans-serif';
+    ctx.fillText(codeStr + 'NGÀY: ' + dateStr, stampW / 2, 91);
+
+    return canvas.toDataURL('image/png');
+}
+
+function drawStampRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+}
+
+function dataUrlToArrayBuffer(dataUrl) {
+    var binary = atob(dataUrl.split(',')[1]);
+    var len = binary.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+/**
+ * Đóng dấu mộc đỏ lên file PDF
+ */
+async function stampPdfDocument(pdfArrayBuffer, docCode, approvedDate) {
+    var PDFDocument = PDFLib.PDFDocument;
+    var degrees = PDFLib.degrees;
+    var pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
+
+    // Tạo ảnh con dấu mộc đỏ dạng PNG
+    var stampDataUrl = generateRedStampDataUrl(docCode, approvedDate);
+    var stampPngBytes = dataUrlToArrayBuffer(stampDataUrl);
+    var stampImage = await pdfDoc.embedPng(stampPngBytes);
+
+    var pages = pdfDoc.getPages();
+    if (pages.length > 0) {
+        var firstPage = pages[0];
+        var size = firstPage.getSize();
+        var width = size.width;
+        var height = size.height;
+
+        // Kích thước tinh chỉnh con dấu: rộng 132pt (~46mm), cao 50pt (~17.5mm)
+        var stampW = 132;
+        var stampH = 50;
+        var marginX = 16;
+        var marginY = 8; // Đẩy nhích sát lên mép trên để tránh hoàn toàn tiêu đề
+
+        var rotation = 0;
+        try {
+            rotation = firstPage.getRotation().angle || 0;
+        } catch (e) {
+            rotation = 0;
+        }
+
+        var posX, posY, rotAngle;
+        if (rotation === 90) {
+            posX = width - stampH - marginY;
+            posY = marginX;
+            rotAngle = 90 - 1.5;
+        } else if (rotation === 180) {
+            posX = marginX;
+            posY = marginY;
+            rotAngle = 180 - 1.5;
+        } else if (rotation === 270) {
+            posX = marginY;
+            posY = height - stampW - marginX;
+            rotAngle = 270 - 1.5;
+        } else {
+            // Chuẩn mặc định: góc trên bên phải
+            posX = width - stampW - marginX;
+            posY = height - stampH - marginY;
+            rotAngle = -1.5; // Nghiêng nhẹ -1.5 độ tự nhiên, không bị chúc góc trái xuống tiêu đề
+        }
+
+        firstPage.drawImage(stampImage, {
+            x: posX,
+            y: posY,
+            width: stampW,
+            height: stampH,
+            opacity: 0.95,
+            rotate: degrees(rotAngle)
+        });
+    }
+
+    return await pdfDoc.save();
+}
+
+/**
+ * Đóng dấu mộc đỏ lên file ảnh (JPG/PNG)
+ */
+function stampImageDocument(imgUrl, docCode, approvedDate, callback) {
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        var stampImg = new Image();
+        stampImg.onload = function() {
+            var stampW = Math.max(180, Math.min(canvas.width * 0.22, 340));
+            var stampH = stampW * (110 / 260);
+            var marginX = canvas.width * 0.02;
+            var marginY = canvas.height * 0.012;
+            var posX = canvas.width - stampW - marginX;
+            var posY = marginY;
+
+            ctx.save();
+            ctx.translate(posX + stampW / 2, posY + stampH / 2);
+            ctx.rotate(-1.5 * Math.PI / 180);
+            ctx.globalAlpha = 0.95;
+            ctx.drawImage(stampImg, -stampW / 2, -stampH / 2, stampW, stampH);
+            ctx.restore();
+
+            canvas.toBlob(function(blob) {
+                callback(blob);
+            }, 'image/jpeg', 0.95);
+        };
+        stampImg.src = generateRedStampDataUrl(docCode, approvedDate);
+    };
+    img.onerror = function() {
+        callback(null);
+    };
+    img.src = imgUrl;
+}
+
+/**
+ * Xử lý khi người dùng nhấn nút "TẢI HỒ SƠ ĐÃ XÁC NHẬN"
+ */
+async function handleDownloadApproved(e) {
+    if (e && e.preventDefault) e.preventDefault();
+
+    var btn = document.getElementById('btnDownloadApproved');
+    var btnIcon = document.getElementById('btnDownloadIcon');
+    var btnText = document.getElementById('btnDownloadText');
+    if (!btn) return false;
+
+    var originalFileUrl = btn.getAttribute('data-file');
+    var approvedFileUrl = btn.getAttribute('data-approved');
+    var docCode = btn.getAttribute('data-code') || '';
+    var approvedDate = btn.getAttribute('data-date') || '';
+    var saveUrl = btn.getAttribute('data-save-url') || '';
+
+    // Hiển thị trạng thái đang xử lý tải về
+    btn.style.pointerEvents = 'none';
+    btn.style.opacity = '0.85';
+    if (btnIcon) btnIcon.className = 'fa-solid fa-spinner fa-spin';
+    if (btnText) btnText.innerText = 'Đang tải về...';
+
+    try {
+        var isPdf = originalFileUrl.toLowerCase().indexOf('.pdf') !== -1;
+        var ext = isPdf ? 'pdf' : (originalFileUrl.toLowerCase().indexOf('.png') !== -1 ? 'png' : 'jpg');
+        var downloadFilename = 'Ho_so_xac_nhan_' + docCode + '.' + ext;
+
+        var res = await fetch(originalFileUrl);
+        if (!res.ok) throw new Error('Không thể tải tệp gốc (' + res.status + ')');
+
+        var finalBlob = null;
+        if (isPdf) {
+            if (typeof PDFLib === 'undefined') {
+                throw new Error('Thư viện PDFLib chưa sẵn sàng');
+            }
+            var buffer = await res.arrayBuffer();
+            var stampedPdfBytes = await stampPdfDocument(buffer, docCode, approvedDate);
+            finalBlob = new Blob([stampedPdfBytes], { type: 'application/pdf' });
+        } else {
+            finalBlob = await new Promise(function(resolve, reject) {
+                stampImageDocument(originalFileUrl, docCode, approvedDate, function(blob) {
+                    if (blob) resolve(blob);
+                    else reject(new Error('Lỗi đóng dấu ảnh'));
+                });
+            });
+        }
+
+        if (!finalBlob) throw new Error('Không tạo được file đóng dấu');
+
+        // Kích hoạt tải file về máy
+        var blobUrl = URL.createObjectURL(finalBlob);
+        var downloadLink = document.createElement('a');
+        downloadLink.href = blobUrl;
+        downloadLink.download = downloadFilename;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        // Lưu bản có dấu lên server chạy ngầm trong nền
+        if (saveUrl) {
+            try {
+                var formData = new FormData();
+                formData.append('code', docCode);
+                formData.append('stamped_file', finalBlob, downloadFilename);
+                fetch(saveUrl, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                }).then(function(r) { return r.json(); }).then(function(savedRes) {
+                    if (savedRes && savedRes.file_url) {
+                        btn.setAttribute('data-approved', savedRes.file_url);
+                    }
+                }).catch(function(saveErr) {
+                    console.log('[STAMP SAVE ERROR]', saveErr);
+                });
+            } catch (errPost) {
+                console.log(errPost);
+            }
+        }
+
+        // Cập nhật giao diện thành công
+        if (btnIcon) btnIcon.className = 'fa-solid fa-circle-check';
+        if (btnText) btnText.innerText = 'Đã tải về thành công!';
+
+        setTimeout(function() {
+            btn.style.pointerEvents = 'auto';
+            btn.style.opacity = '1';
+            if (btnIcon) btnIcon.className = 'fa-solid fa-file-circle-check';
+            if (btnText) btnText.innerText = 'TẢI HỒ SƠ ĐÃ XÁC NHẬN';
+        }, 3000);
+
+    } catch (err) {
+        console.error('[STAMP ERROR]', err);
+        // Fallback an toàn: Nếu trình duyệt không hỗ trợ, vẫn mở tải file gốc
+        if (btnIcon) btnIcon.className = 'fa-solid fa-file-pdf';
+        if (btnText) btnText.innerText = 'TẢI HỒ SƠ ĐÃ XÁC NHẬN';
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+        window.open(originalFileUrl, '_blank');
+    }
+
+    return false;
+}
+</script>
 
 <?php 
    $this->load->view('modules/mod_footer'); 

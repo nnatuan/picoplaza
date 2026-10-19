@@ -1733,6 +1733,22 @@ function send_telegram_core($chat_id, $message_text)
     $chat_id = trim($chat_id);
     if (empty($chat_id) || empty($message_text)) return FALSE;
     
+    // 1. NẾU CHAT_ID CHỨA NHIỀU NHÓM PHÂN CÁCH BỞI DẤU ; HOẶC ,
+    if (strpos($chat_id, ';') !== false || strpos($chat_id, ',') !== false) {
+        $delimiter = (strpos($chat_id, ';') !== false) ? ';' : ',';
+        $chat_ids = explode($delimiter, $chat_id);
+        $last_res = null;
+        $sent_ids = array();
+        foreach ($chat_ids as $cid) {
+            $cid = trim($cid);
+            if (!empty($cid) && !in_array($cid, $sent_ids)) {
+                $sent_ids[] = $cid;
+                $last_res = send_telegram_core($cid, $message_text);
+            }
+        }
+        return $last_res;
+    }
+    
     $bot_token = "8829107476:AAEJlU-4xdYDBffuMmNM5LDTyXN6L9VUD5A"; // Điền Token Bot Telegram vào đây
     $url = "https://api.telegram.org/bot" . $bot_token . "/sendMessage";
     
@@ -1765,11 +1781,18 @@ function send_telegram_core($chat_id, $message_text)
     $log_line = date('Y-m-d H:i:s') . " | ChatID: " . $chat_id . " | HTTP: " . $http_code . " | Response: " . (!empty($response) ? trim($response) : $curl_err) . "\n";
     @file_put_contents(FCPATH . 'telegram_debug.log', $log_line, FILE_APPEND);
     
-    // TỰ ĐỘNG XỬ LÝ KHI GROUP ĐƯỢC NÂNG CẤP LÊN SUPERGROUP (MIGRATE TO CHAT ID)
+    // 2. TỰ ĐỘNG XỬ LÝ RETRY KHI LỖI:
+    // a) Group được nâng cấp lên supergroup (migrate_to_chat_id)
+    // b) Group là supergroup nhưng người dùng chỉ nhập số thông thường không có tiền tố -100 (ví dụ -5466283560 -> -1005466283560)
     if (!empty($res_arr) && empty($res_arr['ok'])) {
         $retry_id = '';
         if (!empty($res_arr['parameters']['migrate_to_chat_id'])) {
             $retry_id = $res_arr['parameters']['migrate_to_chat_id'];
+        } elseif (!empty($res_arr['description']) && strpos($res_arr['description'], 'chat not found') !== false) {
+            // Nếu báo chat not found: thử bổ sung tiền tố -100 cho Supergroup
+            if (preg_match('/^-[0-9]+$/', $chat_id) && strpos($chat_id, '-100') !== 0) {
+                $retry_id = '-100' . substr($chat_id, 1);
+            }
         }
         
         if (!empty($retry_id)) {

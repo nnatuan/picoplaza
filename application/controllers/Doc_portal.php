@@ -159,11 +159,11 @@ class Doc_portal extends CI_Controller
             'cfile_path'      => $uploaded_file_path
         );
 
-        $doc_code = workflow_submit_document($submit_data, false); // false để AJAX chạy ngầm thông báo, không làm chậm quá trình submit
+        $doc_code = workflow_submit_document($submit_data, true); // Gửi thông báo Telegram & Email ngay lập tức
 
         if ($doc_code) {
             $_SESSION['doc_flash_success'] = 'Hồ sơ mã #' . $doc_code . ' đã được gửi thành công!';
-            redirect(base_url() . 'doc_portal/track/' . $doc_code . '?just_submitted=1');
+            redirect(base_url() . 'doc_portal/track/' . $doc_code);
         } else {
             $_SESSION['doc_flash_error'] = 'Lỗi hệ thống trong quá trình gửi hồ sơ. Vui lòng liên hệ hỗ trợ!';
             redirect(base_url() . 'doc_portal/submit/' . $doc_type_id);
@@ -246,5 +246,57 @@ class Doc_portal extends CI_Controller
         header('Content-Type: application/json; charset=utf-8');
         echo json_encode(array('status' => true, 'message' => 'Đã gửi thông báo Telegram & Email thành công', 'code' => $code));
         exit();
+    }
+
+    /**
+     * AJAX lưu file đã đóng dấu mộc đỏ sau khi thẩm định thông qua
+     */
+    function ajax_save_approved_file()
+    {
+        if (session_status() == PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
+
+        $code = $this->input->post('code');
+        $code = trim($code);
+        if (empty($code) || empty($_FILES['stamped_file']['name'])) {
+            echo json_encode(array('status' => false, 'message' => 'Dữ liệu không hợp lệ'));
+            return;
+        }
+
+        $submission = get_doc_submission_by_code($code);
+        if (empty($submission) || $submission['cstatus'] !== 'COMPLETED') {
+            echo json_encode(array('status' => false, 'message' => 'Hồ sơ chưa hoàn tất thẩm định'));
+            return;
+        }
+
+        $upload_dir = './upload/documents/' . date('Ym') . '/';
+        if (!is_dir($upload_dir)) {
+            @mkdir($upload_dir, 0777, true);
+        }
+
+        $ext = strtolower(pathinfo($_FILES['stamped_file']['name'], PATHINFO_EXTENSION));
+        if (!in_array($ext, array('pdf', 'jpg', 'jpeg', 'png'))) {
+            $ext = 'pdf';
+        }
+
+        $filename = 'approved_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
+        $target = $upload_dir . $filename;
+
+        if (move_uploaded_file($_FILES['stamped_file']['tmp_name'], $target)) {
+            $saved_rel_path = 'upload/documents/' . date('Ym') . '/' . $filename;
+            $this->load->database();
+            $this->db->where('nid', (int)$submission['nid']);
+            $this->db->update(Fget_ap_table('tdoc_submission'), array(
+                'cfile_approved' => $saved_rel_path
+            ));
+
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(array('status' => true, 'message' => 'Đã lưu file xác nhận có đóng dấu', 'file_url' => base_url($saved_rel_path)));
+            return;
+        }
+
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(array('status' => false, 'message' => 'Lỗi lưu file'));
     }
 }

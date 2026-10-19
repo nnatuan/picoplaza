@@ -88,11 +88,22 @@ Script nạp CSDL hoàn chỉnh được lưu tại: **[picoplaza_workflow.sql](
 * **Quy tắc duyệt độc lập**:
   1. **Nếu 1 phòng ban Từ chối (Reject)**: Bắt buộc nhập lý do $\rightarrow$ Toàn bộ hồ sơ ngay lập tức chuyển sang **`REJECTED`** $\rightarrow$ Hệ thống tự động gửi email thông báo chi tiết lý do cho khách hàng.
   2. **Nếu tất cả các phòng ban có quyền duyệt (Approve) đã thông qua**: Hệ thống **tự động hoàn tất hồ sơ ngay lập tức** $\rightarrow$ Trạng thái chuyển thẳng sang **`COMPLETED`** $\rightarrow$ Gửi email thông báo hoàn tất cho khách hàng và bắn thông báo xác nhận lên Telegram Bot của Ban Quản Trị.
-  3. **Phòng ban chỉ xem (VIEW)**: Có thể truy cập xem nội dung hồ sơ và tiến độ thẩm định của các đơn vị khác, nhưng không can thiệp vào kết quả duyệt.
+  3. **Phòng ban chỉ xem (VIEW)**: 
+     * Khi khách nộp hồ sơ mới: **KHÔNG** gửi thông báo Telegram tới nhóm của các phòng ban Chỉ xem (chỉ gửi tới các phòng ban có quyền Duyệt và Admin).
+     * Khi hồ sơ **đã được thẩm định thông qua hoàn tất (`COMPLETED`)**: Hệ thống mới tự động gửi thông báo Telegram tới các nhóm phòng ban Chỉ xem này để nắm bắt thông tin và phối hợp tác nghiệp.
+     * Phòng ban chỉ xem có thể truy cập CMS để xem nội dung hồ sơ và tiến độ thẩm định của các đơn vị khác, nhưng không can thiệp vào kết quả duyệt.
 
-### **Bước 3: Hoàn tất & Trả kết quả (Cấp văn bản xác nhận)**
+### **Bước 3: Hoàn tất & Trả kết quả (Cấp văn bản xác nhận & Đóng dấu mộc đỏ)**
 * Hồ sơ đạt trạng thái **`COMPLETED`**.
-* Khách hàng tra cứu tại `/portal-tham-dinh/theo-doi/:code`: Hiển thị Stepper hoàn tất 3 bước, mở nút tải văn bản chính thức với ghi chú *"Đã thông qua thẩm định"* kèm tệp đính kèm.
+* Khách hàng tra cứu tại `/portal-tham-dinh/theo-doi/:code`: Hiển thị Stepper hoàn tất 3 bước, mở nút **"TẢI HỒ SƠ ĐÃ XÁC NHẬN"**.
+* **Tính năng đóng dấu đỏ tự động (Automated Red Stamp)**:
+  * Khi khách hàng bấm vào nút tải: Hệ thống tự động nạp file (PDF hoặc Ảnh) và đóng dấu mộc đỏ viền đôi ở góc trên bên phải trang đầu tiên:
+    * Tiêu đề: **BAN QUẢN LÝ PICO PLAZA**
+    * Nội dung chính: **★ ĐÃ DUYỆT ★**
+    * Thông tin phụ: **MÃ: #[MÃ_HỒ_SƠ] • NGÀY: [DD/MM/YYYY]**
+    * Góc nghiêng nhẹ tự nhiên (-3°) chuẩn con dấu hành chính thực tế.
+  * Tự động xuất file tải về máy khách: `[DA_DUYET]_HS-xxxxxx.pdf`.
+  * Đồng thời tự động đồng bộ lưu bản đóng dấu lên server (`cfile_approved`) để phục vụ quản trị và xem lại sau này.
 
 ---
 

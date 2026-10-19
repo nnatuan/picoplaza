@@ -282,8 +282,8 @@ if (!function_exists('workflow_dept_review')) {
                 workflow_notify_customer_status($submission_id, 'COMPLETED');
 
                 // Bắn thông báo Telegram cho Admin về hồ sơ đã hoàn tất
-                $admin_group_id = function_exists('get_value_by_config') ? get_value_by_config(24) : (function_exists('get_config_value') ? get_config_value(24) : '');
-                if (!empty($admin_group_id) && function_exists('send_telegram_core')) {
+                $admin_group_raw = function_exists('get_value_by_config') ? get_value_by_config(24) : (function_exists('get_config_value') ? get_config_value(24) : '');
+                if (!empty($admin_group_raw) && function_exists('send_telegram_core')) {
                     $sub_info = get_doc_submission_by_id($submission_id);
                     $sub_code = !empty($sub_info['ccode']) ? $sub_info['ccode'] : $submission_id;
                     $cust_name = !empty($sub_info['ccustomer_name']) ? $sub_info['ccustomer_name'] : '';
@@ -294,8 +294,20 @@ if (!function_exists('workflow_dept_review')) {
                     $msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($cust_name, ENT_QUOTES, 'UTF-8') . "\n";
                     $msg .= "📋 <b>Loại hồ sơ:</b> " . htmlspecialchars($type_name, ENT_QUOTES, 'UTF-8') . "\n";
                     $msg .= "🎉 <b>Kết quả:</b> Tất cả các phòng ban phụ trách đã duyệt thông qua. Hồ sơ đã tự động được hoàn tất.";
-                    @send_telegram_core($admin_group_id, $msg);
+                    
+                    $admin_groups = explode(';', $admin_group_raw);
+                    $sent_admin_groups = array();
+                    foreach ($admin_groups as $ag_id) {
+                        $ag_id = trim($ag_id);
+                        if (!empty($ag_id) && !in_array($ag_id, $sent_admin_groups)) {
+                            $sent_admin_groups[] = $ag_id;
+                            @send_telegram_core($ag_id, $msg);
+                        }
+                    }
                 }
+
+                // Bắn thông báo Telegram tới các phòng ban CHỈ XEM (VIEW) khi hồ sơ được thông qua hoàn tất
+                workflow_notify_view_depts_completed($submission_id);
             }
 
             return array('status' => true, 'message' => 'Đã thẩm định thông qua.');
@@ -336,6 +348,7 @@ if (!function_exists('workflow_admin_review')) {
             );
 
             workflow_notify_customer_status($submission_id, 'COMPLETED');
+            workflow_notify_view_depts_completed($submission_id);
             return array('status' => true, 'message' => 'Hồ sơ đã được phê duyệt COMPLETED thành công.');
         } else {
             if (empty(trim($reason_note))) {
@@ -415,6 +428,7 @@ if (!function_exists('workflow_admin_override')) {
             );
 
             workflow_notify_customer_status($submission_id, 'COMPLETED');
+            workflow_notify_view_depts_completed($submission_id);
             return array('status' => true, 'message' => 'Đã thực hiện FORCE APPROVE thành công.');
         } elseif ($override_action === 'FORCE_REJECT') {
             // Force Reject: Hủy/Dừng xử lý hồ sơ lập tức ở bất kỳ giai đoạn nào
@@ -571,17 +585,24 @@ if (!function_exists('workflow_notify_new_submission')) {
         // Cho phép gửi Telegram khi config nid=25 được thiết lập (hỗ trợ cả 0 và 1)
         $is_telegram_enabled = ($tele_config === '1' || $tele_config === '0' || $tele_config === '');
 
-        // 1. GỬI THÔNG BÁO TỚI NHÓM TELEGRAM CỦA TỪNG PHÒNG BAN THẨM ĐỊNH
+        // 1. GỬI THÔNG BÁO TỚI NHÓM TELEGRAM CỦA CÁC PHÒNG BAN CÓ QUYỀN DUYỆT (APPROVE)
+        // Những phòng ban CHỈ XEM (VIEW) sẽ KHÔNG gửi thông báo ở bước khách nộp hồ sơ
         $steps = get_doc_approval_steps($submission_id);
         if (!empty($steps)) {
             $sent_groups = array();
             foreach ($steps as $step) {
+                // Chỉ gửi cho phòng ban có quyền Duyệt (APPROVE), bỏ qua phòng ban chỉ xem (VIEW)
+                $perm = !empty($step['cpermission']) ? strtoupper(trim($step['cpermission'])) : 'APPROVE';
+                if ($perm === 'VIEW') {
+                    continue;
+                }
+
                 $group_id = !empty($step['ctelegram_group_id']) ? trim($step['ctelegram_group_id']) : '';
                 if (empty($group_id) || in_array($group_id, $sent_groups)) continue;
                 $sent_groups[] = $group_id;
 
                 $dept_title = !empty($step['dept_name']) ? $step['dept_name'] : 'PHÒNG BAN';
-                $dept_msg = "🏢 <b>[HỒ SƠ MỚI — " . htmlspecialchars(mb_strtoupper($dept_title, 'UTF-8'), ENT_QUOTES, 'UTF-8') . "]</b>\n";
+                $dept_msg = "🏢 <b>[HỒ SƠ MỚI CẦN THẨM ĐỊNH — " . htmlspecialchars(mb_strtoupper($dept_title, 'UTF-8'), ENT_QUOTES, 'UTF-8') . "]</b>\n";
                 $dept_msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
                 $dept_msg .= "📄 <b>Loại hồ sơ:</b> " . htmlspecialchars($sub['doc_type_name'], ENT_QUOTES, 'UTF-8') . "\n";
                 $dept_msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
@@ -604,8 +625,8 @@ if (!function_exists('workflow_notify_new_submission')) {
 
         // 2. GỬI THÔNG BÁO VÀO NHÓM BAN QUẢN TRỊ / ADMIN
         if ($is_telegram_enabled && function_exists('send_telegram_core')) {
-            $admin_group_id = function_exists('get_value_by_config') ? get_value_by_config(24) : (function_exists('get_config_value') ? get_config_value(24) : '');
-            if (!empty($admin_group_id)) {
+            $admin_group_raw = function_exists('get_value_by_config') ? get_value_by_config(24) : (function_exists('get_config_value') ? get_config_value(24) : '');
+            if (!empty($admin_group_raw)) {
                 $admin_msg = "📋 <b>[HỒ SƠ MỚI TIẾP NHẬN — TOÀN HỆ THỐNG]</b>\n";
                 $admin_msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
                 $admin_msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")\n";
@@ -614,7 +635,16 @@ if (!function_exists('workflow_notify_new_submission')) {
                 $admin_msg .= "⏳ <b>Trạng thái:</b> ĐANG THẨM ĐỊNH SONG SONG\n";
                 $admin_msg .= "⏰ <b>Thời gian:</b> " . date('d/m/Y H:i', strtotime($sub['ddate_submit'])) . "\n";
                 $admin_msg .= "👉 <i>Vui lòng truy cập trang quản trị <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a></i>";
-                send_telegram_core($admin_group_id, $admin_msg);
+
+                $admin_groups = explode(';', $admin_group_raw);
+                $sent_admin_groups = array();
+                foreach ($admin_groups as $ag_id) {
+                    $ag_id = trim($ag_id);
+                    if (!empty($ag_id) && !in_array($ag_id, $sent_admin_groups)) {
+                        $sent_admin_groups[] = $ag_id;
+                        send_telegram_core($ag_id, $admin_msg);
+                    }
+                }
             }
         }
 
@@ -639,6 +669,64 @@ if (!function_exists('workflow_notify_new_submission')) {
 
             $receiver = array(array('cemail' => $sub['ccustomer_email'], 'cfullname' => $sub['ccustomer_name']));
             @send_mail_mailjet($receiver, $subject, $content);
+        }
+    }
+}
+
+if (!function_exists('workflow_notify_view_depts_completed')) {
+    /**
+     * Gửi thông báo Telegram tới các phòng ban CHỈ XEM (VIEW) khi hồ sơ đã hoàn tất phê duyệt
+     */
+    function workflow_notify_view_depts_completed($submission_id)
+    {
+        $ci =& get_instance();
+        $ci->load->database();
+
+        $sub = get_doc_submission_by_id($submission_id);
+        if (empty($sub)) return;
+
+        // Đảm bảo helper gửi Telegram được nạp
+        if (!function_exists('send_telegram_core')) {
+            $ci->load->helper('ap_module');
+        }
+
+        // Lấy danh sách các phòng ban CHỈ XEM (cpermission = 'VIEW') của hồ sơ này
+        $query = "SELECT step.*, d.cname as dept_name, d.ctelegram_group_id 
+                  FROM " . Fget_ap_table('tdoc_approval_step') . " step
+                  LEFT JOIN " . Fget_ap_table('tdepartment') . " d ON step.nid_dept = d.nid
+                  WHERE step.nid_submission = " . (int)$submission_id . " 
+                  AND step.cpermission = 'VIEW'";
+        $view_steps = $ci->db->query($query)->result_array();
+
+        if (empty($view_steps)) return;
+
+        $admin_url = (strpos(base_url(), '/admin') !== false) ? rtrim(base_url(), '/') : rtrim(base_url(), '/') . '/admin';
+        $sent_groups = array();
+
+        foreach ($view_steps as $vstep) {
+            $group_id = !empty($vstep['ctelegram_group_id']) ? trim($vstep['ctelegram_group_id']) : '';
+            if (empty($group_id) || in_array($group_id, $sent_groups)) continue;
+            $sent_groups[] = $group_id;
+
+            $dept_title = !empty($vstep['dept_name']) ? $vstep['dept_name'] : 'PHÒNG BAN';
+            $msg = "📢 <b>[HỒ SƠ ĐÃ ĐƯỢC DUYỆT THÔNG QUA — " . htmlspecialchars(mb_strtoupper($dept_title, 'UTF-8'), ENT_QUOTES, 'UTF-8') . "]</b>\n";
+            $msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
+            $msg .= "📄 <b>Loại hồ sơ:</b> " . htmlspecialchars($sub['doc_type_name'], ENT_QUOTES, 'UTF-8') . "\n";
+            $msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
+            $msg .= "👤 <b>Người nộp:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")\n";
+            $msg .= "✅ <b>Trạng thái:</b> ĐÃ HOÀN TẤT THẨM ĐỊNH (CÁC PHÒNG BAN PHỤ TRÁCH ĐÃ THÔNG QUA)\n";
+            if (!empty($sub['cfile_path'])) {
+                $frontend_base = (strpos(base_url(), '/admin') !== false) ? preg_replace('#/admin/?$#', '/', base_url()) : base_url();
+                $frontend_base = rtrim($frontend_base, '/') . '/';
+                $file_url = (strpos($sub['cfile_path'], 'http://') === 0 || strpos($sub['cfile_path'], 'https://') === 0) ? $sub['cfile_path'] : $frontend_base . ltrim($sub['cfile_path'], '/');
+                $msg .= "📎 <b>Tệp đính kèm:</b> <a href=\"" . htmlspecialchars($file_url, ENT_QUOTES, 'UTF-8') . "\">Xem tệp hồ sơ</a>\n";
+            }
+            $msg .= "⏰ <b>Thời gian hoàn tất:</b> " . date('d/m/Y H:i') . "\n";
+            $msg .= "👉 <i>Vui lòng đăng nhập CMS <a href=\"" . htmlspecialchars($admin_url, ENT_QUOTES, 'UTF-8') . "\">tại đây</a> để theo dõi hồ sơ.</i>";
+
+            if (function_exists('send_telegram_core')) {
+                send_telegram_core($group_id, $msg);
+            }
         }
     }
 }
