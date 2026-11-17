@@ -1,0 +1,210 @@
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
+/**
+ * =================================================================
+ * PICO SAIGON Frontend Post Listing System with Multi-Document Upload.
+ * CodeIgniter Framework for PHP.
+ * =================================================================
+ */
+
+class Post_listing extends CI_Controller
+{
+    var $event        = '';
+    var $title        = 'Đăng tin bất động sản miễn phí — PICO SAIGON';
+    var $tags         = '';
+    var $description  = '';
+    var $m_error_msg  = '';
+
+    var $m_cbo_nid_cat_product  = '';
+    var $m_cbo_nid_province     = '';
+    var $m_txt_ctitle           = '';
+    var $m_txt_ccode            = '';
+    var $m_txt_clocation_detail = '';
+    var $m_txt_cprice_display   = '';
+    var $m_txt_nprice_value     = 0;
+    var $m_txt_narea            = 0.00;
+    var $m_txt_nbedroom          = 0;
+    var $m_txt_nbathroom         = 0;
+    var $m_txt_cshort_content   = '';
+    var $m_txt_ccontent         = '';
+    var $m_txt_cmaps_iframe     = '';
+    var $m_txt_cimage           = '';
+
+    function __construct()
+    { 
+        parent::__construct();
+        session_start();
+        $this->load->database();
+        $this->load->helper('ap_function');
+        $this->load->helper('ap_object');
+        $this->load->helper('ap_html');
+        $this->load->helper('ap_view_helper');
+        $this->load->helper('ap_db');
+        $this->load->helper('ap_module');
+    }
+
+    function index() { $this->do_process(); }
+
+    function do_process()
+    {
+        $this->get_data();
+        $this->caculate_data();
+        $this->do_business();
+        $this->destroy_data();
+    }
+
+    private function get_data()
+    {
+        if (isset($_POST['hidden_action'])) {
+            $this->event = trim($_POST['hidden_action']);
+        }
+
+        if (isset($_FILES["txt_cimage"]) && $_FILES["txt_cimage"]["name"] != '') {
+            $path = FCPATH . 'upload/images_product/full_images/';
+            $this->m_txt_cimage = Fupload_resize_img($_FILES["txt_cimage"], $path, 2000, 1000);
+        }
+
+        if (isset($_POST['txt_ctitle'])) {
+            $this->m_cbo_nid_cat_product  = $_POST['cbo_nid_cat_product'];
+            $this->m_cbo_nid_province     = $_POST['cbo_nid_province'];
+            $this->m_txt_ctitle           = trim($_POST['txt_ctitle']);
+            $this->m_txt_ccode            = trim($_POST['txt_ccode']);
+            $this->m_txt_clocation_detail = trim($_POST['txt_clocation_detail']);
+            $this->m_txt_cprice_display   = trim($_POST['txt_cprice_display']);
+            
+            $this->m_txt_nprice_value     = Fconvert_to_int(str_replace('.', '', $_POST['txt_nprice_value']));
+            $this->m_txt_narea            = (double)$_POST['txt_narea'];
+            $this->m_txt_nbedroom          = Fconvert_to_int($_POST['txt_nbedroom']);
+            $this->m_txt_nbathroom         = Fconvert_to_int($_POST['txt_nbathroom']);
+            
+            $this->m_txt_cshort_content   = trim($_POST['txt_cshort_content']);
+            $this->m_txt_ccontent         = trim($_POST['txt_ccontent']);
+            $this->m_txt_cmaps_iframe     = trim($_POST['txt_cmaps_iframe']);
+        }
+    }
+
+    private function caculate_data()
+    {
+        if (!isset($_SESSION['session_nid_member'])) {
+            redirect(base_url() . 'auth');
+        }
+
+        if ($this->event === 'post_listing') {
+            $this->process_insert_listing();
+        }
+    }
+
+    private function process_insert_listing()
+    {
+        if (
+            $this->m_txt_ctitle == '' || $this->m_txt_ccode == '' || 
+            $this->m_cbo_nid_cat_product == 0 || $this->m_cbo_nid_province == 0 ||
+            $this->m_txt_clocation_detail == '' || $this->m_txt_cprice_display == '' ||
+            $this->m_txt_nprice_value <= 0 || $this->m_txt_narea <= 0
+        ) {
+            $this->m_error_msg = 'Vui lòng điền đầy đủ các thông số bắt buộc của bất động sản!';
+            return;
+        }
+
+        if (check_product_duplicate($this->m_txt_ccode) == TRUE) {
+            $this->m_error_msg = 'Tiêu đề đường dẫn này đã tồn tại! Vui lòng thay đổi lại một chút tiêu đề.';
+            return;
+        }
+
+        $current_datetime = date('Y-m-d H:i:s');
+        $data_insert = array(
+            'nid_cat_product'  => $this->m_cbo_nid_cat_product,
+            'nid_province'     => $this->m_cbo_nid_province,
+            'ccode'            => $this->m_txt_ccode,
+            'ctitle'           => $this->m_txt_ctitle,
+            'clocation_detail' => $this->m_txt_clocation_detail,
+            'cprice_display'   => $this->m_txt_cprice_display,
+            'nprice_value'     => $this->m_txt_nprice_value,
+            'narea'            => $this->m_txt_narea,
+            'nbedroom'         => $this->m_txt_nbedroom,
+            'nbathroom'        => $this->m_txt_nbathroom,
+            'cshort_content'   => $this->m_txt_cshort_content,
+            'ccontent'         => $this->m_txt_ccontent,
+            'cmaps_iframe'     => $this->m_txt_cmaps_iframe,
+            'cimage'           => $this->m_txt_cimage,
+            
+            'nstatus'          => 0, 
+            'nproduct_status'  => 1, 
+            'nactive'          => 1,
+            'chome'            => '0',
+            
+            'niduser_created'  => $_SESSION['session_nid_member'], 
+            'dcreated_at'      => $current_datetime,
+            'dupdated_at'      => $current_datetime
+        );
+
+        $insert_id = Finsert_data_global('tproduct', $data_insert);
+
+        if ($insert_id != FALSE) {
+            // Xử lý quy quét toàn bộ file document đính kèm
+            $doc_types = ['contract', 'diagram', 'legal'];
+            $secure_path = FCPATH . 'upload/document/';
+            
+            if (!is_dir($secure_path)) { 
+                mkdir($secure_path, 0777, true); 
+            }
+
+            foreach ($doc_types as $type) {
+                $file_field = 'doc_file_' . $type;
+                
+                if (isset($_FILES[$file_field]) && $_FILES[$file_field]['name'] != '') {
+                    $file_ext = pathinfo($_FILES[$file_field]['name'], PATHINFO_EXTENSION);
+                    $new_file_name = 'doc_' . $type . '_' . uniqid() . '_' . time() . '.' . $file_ext;
+                    
+                    if (move_uploaded_file($_FILES[$file_field]['tmp_name'], $secure_path . $new_file_name)) {
+                        // Đóng gói dữ liệu - ÉP MẶC ĐỊNH LÀ 1 (CÔNG KHAI) ĐỂ ADMIN PHÂN QUYỀN LẠI TRONG CMS
+                        $data_doc = array(
+                            'nid_product'   => $insert_id,
+                            'ctitle'        => 'Tai-lieu-' . $type . '-' . $this->m_txt_ccode,
+                            'cfile_path'    => $new_file_name,
+                            'ctype_doc'     => $type,
+                            'naccess_level' => 1, // Mặc định công khai khi khách hàng đăng bài
+                            'nstatus'       => 1,
+                            'dcreated_at'   => $current_datetime
+                        );
+                        // Gọi hàm dùng chung insert bản ghi tài liệu vào DB
+                        Finsert_data_global('tdocument', $data_doc);
+                    }
+                }
+            }
+
+            //redirect(base_url() . 'post/' . $this->m_txt_ccode);
+			redirect(base_url() . 'complete_post');
+			
+        } else {
+            $this->m_error_msg = 'Đã có lỗi xảy ra khi lưu trữ dữ liệu!';
+        }
+    }
+
+    private function do_business()
+    {
+        $data['title']        = $this->title;
+        $data['tags']         = $this->tags;
+        $data['description']  = $this->description;
+        $data['menu_top']     = 'post_listing';
+        $data['m_message']    = $this->m_error_msg;
+
+        $data['txt_ctitle']           = $this->m_txt_ctitle;
+        $data['txt_ccode']            = $this->m_txt_ccode;
+        $data['txt_clocation_detail'] = $this->m_txt_clocation_detail;
+        $data['txt_cprice_display']   = $this->m_txt_cprice_display;
+        $data['txt_nprice_value']     = $this->m_txt_nprice_value;
+        $data['txt_narea']            = $this->m_txt_narea;
+        $data['txt_nbedroom']          = $this->m_txt_nbedroom;
+        $data['txt_nbathroom']         = $this->m_txt_nbathroom;
+        $data['txt_cshort_content']    = $this->m_txt_cshort_content;
+        $data['txt_ccontent']          = $this->m_txt_ccontent;
+        $data['txt_cmaps_iframe']      = $this->m_txt_cmaps_iframe;
+
+        $data['obj_cat_product'] = get_active_cat_product();
+        $data['obj_province']    = get_active_province(); 
+
+        $this->load->view('post_listing', $data);    
+    }
+
+    private function destroy_data() {}
+}

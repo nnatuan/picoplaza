@@ -1,0 +1,54 @@
+<?php if (!defined('BASEPATH')) exit('No direct script access allowed');
+/**
+ * =================================================================
+ * PICO PLAZA Admin CMS - Cổng Thẩm Định Phòng Ban (Listview)
+ * =================================================================
+ */
+
+class Do_dept_review_listview extends CI_Controller
+{
+    function __construct()
+    {
+        parent::__construct();
+        if (session_status() == PHP_SESSION_NONE) {
+            @session_start();
+        }
+        $this->load->database();
+        $this->load->helper(array('url', 'ap_db', 'ap_function', 'ap_html', 'ap_view', 'ap_object', 'workflow'));
+        $this->config->check_system_login = '1';
+    }
+
+    function index()
+    {
+        // Lấy thông tin user đăng nhập
+        $user_id = (int)Fget_userdata('session_nid_user');
+        if ($user_id <= 0 && isset($_SESSION['session_nid_user'])) {
+            $user_id = (int)$_SESSION['session_nid_user'];
+        }
+        $user_role = function_exists('get_current_staff_role') ? get_current_staff_role() : 'admin';
+
+        // Lấy phòng ban của user
+        $user_dept = 0;
+        if ($user_id > 0) {
+            $user_row = $this->db->where('nid', $user_id)->get(Fget_ap_table('tuser'))->row_array();
+            if (!empty($user_row) && isset($user_row['nid_dept'])) {
+                $user_dept = (int)$user_row['nid_dept'];
+            }
+        }
+
+        $selected_dept = (int)$this->input->get('dept_id');
+        if ($selected_dept <= 0 && $user_dept > 0) {
+            $selected_dept = $user_dept;
+        }
+
+        $filter_status = $this->input->get('step_status');
+
+        $data['list']          = get_dept_review_list($selected_dept, $filter_status);
+        $data['departments']   = get_all_departments();
+        $data['selected_dept'] = $selected_dept;
+        $data['filter_status'] = $filter_status;
+        $data['menu_active']   = 'dept_review';
+
+        $this->load->view('do_dept_review/list', $data);
+    }
+}

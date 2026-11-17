@@ -1,0 +1,77 @@
+<header>
+	<div class="header-top-bar">
+    <div class="wrap">
+      <div class="header-top-content">
+        <span class="top-hotline-label"><i class="fa-solid fa-headset"></i> Hotline Ban Quản Lý:</span>
+        <a href="tel:<?php echo get_value_by_config(12); ?>" class="top-hotline-item">
+          <i class="fa-solid fa-phone"></i> <?php echo get_value_by_config(12); ?>
+        </a>
+        <span class="top-hotline-divider">|</span>
+		<span class="top-hotline-label"><i class="fa-solid fa-headset"></i> Hotline Phòng Dịch Vụ:</span>
+        <a href="tel:<?php echo get_value_by_config(14); ?>" class="top-hotline-item">
+          <i class="fa-solid fa-phone"></i> <?php echo get_value_by_config(14); ?>
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="nav">
+    <div class="logo"><a href="<?php echo base_url(); ?>"><img src="<?php echo base_url().'upload/fb/'.get_logo(); ?>" /></a></div>
+	
+    <ul class="nav-links">
+      <?php 
+        $frontend_menus = get_frontend_menu();
+        if (!empty($frontend_menus)):
+            foreach ($frontend_menus as $menu_item):
+                // Xử lý link: Nếu clink chưa có http/https và không rỗng thì nối với base_url()
+                $menu_url = $menu_item['clink'];
+                if (!empty($menu_url) && !preg_match("~^(?:f|ht)tps?://~i", $menu_url)) {
+                    $menu_url = base_url() . ltrim($menu_url, '/');
+                } else if (empty($menu_url)) {
+                    $menu_url = base_url();
+                }
+      ?>
+                <li><a href="<?php echo $menu_url; ?>"><?php echo htmlspecialchars($menu_item['ctitle']); ?></a></li>
+      <?php 
+            endforeach;
+        else: 
+      ?>
+            <!-- Fallback danh sách mặc định nếu chưa cấu hình DB -->
+            <li><a href="<?php echo base_url(); ?>">Trang chủ</a></li>
+            <li><a href="<?php echo base_url(); ?>about">Giới thiệu</a></li>
+            <li><a href="<?php echo base_url(); ?>posts">Bất động sản</a></li>
+            <li><a href="<?php echo base_url(); ?>news">Tin tức</a></li>
+            <li><a href="<?php echo base_url(); ?>gallery">Gallery</a></li>
+            <li><a href="<?php echo base_url(); ?>portal">Cổng khách hàng</a></li>
+            <li><a href="<?php echo base_url(); ?>files">Mẫu biểu</a></li>
+      <?php endif; ?>
+    </ul>
+    <div class="nav-actions">
+      
+      <?php if(isset($_SESSION['session_nid_member'])): ?>
+        <div class="user-profile-dropdown">
+          <button class="user-dropdown-btn" onclick="toggleUserMenu();">
+            <i class="fa-regular fa-user"></i> 
+            <span><?php echo $_SESSION['session_cusername']; ?></span>
+            <i class="fa-solid fa-angle-down arrow-icon"></i>
+          </button>
+          
+          <ul class="user-dropdown-menu" id="userDropdownMenu">
+            <li><a href="<?php echo base_url(); ?>profile"><i class="fa-regular fa-id-card"></i> Trang cá nhân</a></li>
+            <?php /*<li><a href="<?php echo base_url(); ?>my_posts"><i class="fa-regular fa-building"></i> Tin đăng của tôi</a></li>*/ ?>
+			<li><a href="<?php echo base_url(); ?>my_tickets"><i class="fa fa-ticket"></i> Ticket của tôi</a></li>
+            <li class="divider"></li>
+            <li><a href="<?php echo base_url(); ?>auth/logout" class="logout-link"><i class="fa-solid fa-right-from-bracket"></i> Đăng xuất</a></li>
+          </ul>
+        </div>
+      <?php else: ?>
+        <a href="<?php echo base_url(); ?>auth" class="btn btn-ghost-dark">Đăng nhập</a>
+      <?php endif; ?>
+
+      <a href="<?php echo base_url(); ?>post_listing" class="btn btn-gold hide">Đăng tin</a>
+      <button class="menu-toggle" aria-label="Mở menu">
+        <i class="fa-solid fa-bars"></i>
+      </button>
+    </div>
+  </div>
+</header>

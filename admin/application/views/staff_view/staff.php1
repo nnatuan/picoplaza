@@ -1,0 +1,148 @@
+<div class="right_col" role="main">
+    <div class="">
+        <div class="clearfix"></div>
+        <div class="row">
+            <div class="col-md-12 col-sm-12">
+                <div class="x_panel qcare-form-panel">
+                    <div class="x_title">
+                        <h2><i class="fa fa-user"></i> <?php echo $lbl_form_title; ?></h2>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                        <br />
+
+                        <form name="form_main" method="post" action="<?php echo $link_page; ?>" class="form-horizontal form-label-left">
+                            
+                            <h5 class="qcare-form-section-title section-blue">I. THÔNG TIN QUẢN TRỊ TÀI KHOẢN</h5>
+                            
+                            <div class="item form-group">
+                                <label class="col-form-label col-md-2 col-sm-2 label-align">Tên đăng nhập <span class="required">*</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" name="txt_cuserid" value="<?php echo $txt_cuserid; ?>" required="required" class="form-control" <?php echo ($event == 'edit') ? 'readonly style="background:#eee;"' : ''; ?> placeholder="Ví dụ: staff01" oninput="this.value = this.value.toLowerCase().replace(/[^a-z0-9_]/g, '');">
+                                </div>
+                            </div>
+
+                            <div class="item form-group">
+                                <label class="col-form-label col-md-2 col-sm-2 label-align">Mật khẩu truy cập <?php echo ($event == 'add') ? '<span class="required">*</span>' : ''; ?></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="password" name="txt_cpassword" class="form-control" placeholder="<?php echo ($event == 'edit') ? 'Bỏ trống nếu giữ nguyên mật khẩu cũ' : 'Nhập mật khẩu truy cập'; ?>" <?php echo ($event == 'add') ? 'required="required"' : ''; ?>>
+                                </div>
+                            </div>
+
+                            <div class="item form-group">
+								<label class="col-form-label col-md-2 col-sm-2 label-align">Phân quyền vai trò <span class="required">*</span></label>
+								<div class="col-md-3 col-sm-3">
+									<select name="cbof_crole" id="cbof_crole" class="form-control" onchange="toggleDeptSelect();">
+										<option value="admin" <?php echo ($cbof_crole == 'admin') ? 'selected' : ''; ?>>Quản trị viên (Toàn quyền)</option>
+										<option value="doc_reviewer" <?php echo ($cbof_crole == 'doc_reviewer') ? 'selected' : ''; ?>>Phê duyệt hồ sơ khách hàng</option>
+										<option value="product_mgr" <?php echo ($cbof_crole == 'product_mgr') ? 'selected' : ''; ?>>Quản lý Tin đăng</option>
+										<option value="content_mgr" <?php echo ($cbof_crole == 'content_mgr') ? 'selected' : ''; ?>>Quản trị Nội dung</option>
+										<option value="ticket_mgr" <?php echo ($cbof_crole == 'ticket_mgr') ? 'selected' : ''; ?>>Quản lý Ticket</option>
+										<option value="mail_mgr" <?php echo ($cbof_crole == 'mail_mgr') ? 'selected' : ''; ?>>Quản lý Mail</option>
+									</select>
+								</div>
+								<label class="col-form-label col-md-2 col-sm-2 label-align">Trạng thái khóa</label>
+								<div class="col-md-3 col-sm-3">
+									<select name="cbof_cstatus" class="form-control">
+										<option value="1" <?php echo ($cbof_cstatus == '1') ? 'selected' : ''; ?>>1: Cho phép hoạt động</option>
+										<option value="0" <?php echo ($cbof_cstatus == '0') ? 'selected' : ''; ?>>0: Tạm khóa tài khoản</option>
+									</select>
+								</div>
+							</div>
+
+                            <!-- Dòng chọn phòng ban: Chỉ hiển thị khi chọn vai trò Chuyên viên Thẩm định Hồ sơ -->
+                            <div class="item form-group" id="dept_selection_row" style="<?php echo ($cbof_crole == 'doc_reviewer') ? '' : 'display:none;'; ?>">
+                                <label class="col-form-label col-md-2 col-sm-2 label-align" style="color:#0284c7; font-weight:bold;">
+                                    <i class="fa fa-sitemap"></i> Phòng ban trực thuộc <span class="required">*</span>
+                                </label>
+                                <div class="col-md-8 col-sm-8">
+                                    <select name="cbof_nid_dept" id="cbof_nid_dept" class="form-control" style="border-color:#0284c7;">
+                                        <option value="0">-- Chọn phòng ban phụ trách thẩm định --</option>
+                                        <?php if (!empty($departments)): foreach ($departments as $dept): ?>
+                                            <option value="<?php echo $dept['nid']; ?>" <?php echo ($cbof_nid_dept == $dept['nid']) ? 'selected' : ''; ?>>
+                                                [<?php echo htmlspecialchars($dept['ccode']); ?>] <?php echo htmlspecialchars($dept['cname']); ?>
+                                            </option>
+                                        <?php endforeach; endif; ?>
+                                    </select>
+                                    <small class="text-muted"><i class="fa fa-info-circle"></i> Nhân viên thuộc phòng ban nào thì khi vào hệ thống chỉ nhận và thẩm định hồ sơ được giao cho phòng ban đó.</small>
+                                </div>
+                            </div>
+
+                            <script type="text/javascript">
+                                function toggleDeptSelect() {
+                                    var role = document.getElementById('cbof_crole').value;
+                                    var deptRow = document.getElementById('dept_selection_row');
+                                    if (role === 'doc_reviewer') {
+                                        deptRow.style.display = '';
+                                    } else {
+                                        deptRow.style.display = 'none';
+                                    }
+                                }
+                            </script>
+
+                            <h5 class="qcare-form-section-title section-teal">II. THÔNG TIN HỒ SƠ LÝ LỊCH CÁ NHÂN</h5>
+
+                            <div class="item form-group">
+                                <label class="col-form-label col-md-2 col-sm-2 label-align">Họ và Tên <span class="required">*</span></label>
+                                <div class="col-md-8 col-sm-8">
+                                    <input type="text" name="txt_cfullname" value="<?php echo $txt_cfullname; ?>" required="required" class="form-control" placeholder="Nhập đầy đủ tên nhân viên">
+                                </div>
+                            </div>
+
+                            <div class="item form-group">
+                                <label class="col-form-label col-md-2 col-sm-2 label-align">Số điện thoại</label>
+                                <div class="col-md-3 col-sm-3">
+                                    <input type="text" name="txt_chandphone" value="<?php echo $txt_chandphone; ?>" class="form-control" placeholder="Nhập số di động" maxlength="11" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
+                                </div>
+                                <label class="col-form-label col-md-2 col-sm-2 label-align">Email</label>
+                                <div class="col-md-3 col-sm-3">
+                                    <input type="email" name="txt_cemail" value="<?php echo $txt_cemail; ?>" class="form-control" placeholder="Nhập địa chỉ email">
+                                </div>
+                            </div>
+
+                            <div class="item form-group">
+                                <label class="col-form-label col-md-2 col-sm-2 label-align">Giới tính</label>
+                                <div class="col-md-3 col-sm-3">
+                                    <select name="cbof_cgender" class="form-control">
+                                        <option value="Nam" <?php echo ($cbof_cgender == 'Nam') ? 'selected' : ''; ?>>Nam</option>
+                                        <option value="Nữ" <?php echo ($cbof_cgender == 'Nữ') ? 'selected' : ''; ?>>Nữ</option>
+                                    </select>
+                                </div>
+                                <label class="col-form-label col-md-2 col-sm-2 label-align">Ngày sinh</label>
+                                <div class="col-md-3 col-sm-3">
+                                    <input type="date" name="txt_dbirthday" value="<?php echo $txt_dbirthday; ?>" class="form-control">
+                                </div>
+                            </div>
+							
+							<div class="item form-group">
+                                <label class="col-form-label col-md-2 col-sm-2 label-align">Telegram Chat ID</label>
+                                <div class="col-md-8 col-sm-8">
+                                    <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                        <div style="width: 250px;">
+                                            <input type="text" name="txt_ctelegram_chat_id" value="<?php echo $txt_ctelegram_chat_id; ?>" class="form-control" placeholder="Ví dụ: 5864192305" oninput="this.value = this.value.replace(/[^0-9\-]/g, '');">
+                                        </div>
+                                        <span class="text-muted" style="font-size: 12.5px; font-weight: 600;">
+                                            <i class="fa fa-info-circle text-danger"></i> Dùng để gửi thông báo đếm ngược hạn xử lý công việc tự động qua Bot.
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+							
+                            <div class="ln_solid"></div>
+                            <div class="item form-group">
+                                <div class="col-md-8 col-sm-8 offset-md-2">
+                                    <button type="button" class="btn btn-success qcare-form-btn" name="btn_submit" value="btn_submit" onclick="js_SetSubmitButtonClick(this.form, this.name);"><i class="fa fa-save"></i> Lưu thông tin tài khoản</button>
+                                    <button class="btn btn-secondary qcare-form-btn" type="button" onclick="location.href='<?php echo $link_cancel; ?>'"><i class="fa fa-chevron-left"></i> Quay về</button>
+                                </div>
+                            </div>
+
+                            <input name="hidden_nid" type="hidden" value="<?php echo $nid; ?>" />
+                            <input name="hidden_event" type="hidden" value="<?php echo $event; ?>" />
+                            <input type="hidden" name="hidden_button" value="" />
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

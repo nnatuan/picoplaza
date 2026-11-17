@@ -1,0 +1,563 @@
+<?php 
+	$this->load->view('header');
+	$this->load->view('header_end');
+	$this->load->view('modules/mod_header'); 
+?>
+
+<!-- Thư viện xử lý PDF để hiển thị con dấu ĐÃ DUYỆT -->
+<script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script>
+if (typeof PDFLib === 'undefined') {
+    document.write('<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"><\/script>');
+}
+</script>
+
+<div class="right_col" role="main">
+    <div class="">
+        <div class="page-title">
+            <div class="title_left">
+                <h3><small></small></h3>
+            </div>
+            <div class="title_right text-right" style="margin-bottom: 10px;">
+                <a href="<?php echo base_url('index.php/do_dept_review_listview'); ?>" class="btn btn-secondary btn-sm" style="float: right;"><i class="fa fa-arrow-left"></i> Trở về danh sách</a>
+            </div>
+        </div>
+        <div class="clearfix"></div>
+
+        <?php if(isset($_SESSION['flash_msg'])): ?>
+            <div class="alert alert-success">
+                <i class="fa fa-check-circle"></i> <?php echo $_SESSION['flash_msg']; unset($_SESSION['flash_msg']); ?>
+            </div>
+        <?php endif; ?>
+        <?php if(isset($_SESSION['flash_error'])): ?>
+            <div class="alert alert-danger">
+                <i class="fa fa-exclamation-triangle"></i> <?php echo $_SESSION['flash_error']; unset($_SESSION['flash_error']); ?>
+            </div>
+        <?php endif; ?>
+
+        <div class="row">
+            <!-- Cột trái: Thông tin hồ sơ & Trình duyệt tài liệu trực tiếp -->
+            <div class="col-md-8 col-sm-12">
+                <div class="x_panel">
+                    <div class="x_title">
+                        <h2>THẨM ĐỊNH HỒ SƠ: #<?php echo htmlspecialchars($submission['ccode']); ?> — TỆP ĐÍNH KÈM</h2>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                        <?php 
+                            // Kiểm tra toàn diện điều kiện hoàn tất thẩm định hồ sơ
+                            $need_approve_count = 0;
+                            $approved_count = 0;
+                            if (!empty($all_steps)) {
+                                foreach ($all_steps as $st) {
+                                    if (!isset($st['cpermission']) || $st['cpermission'] !== 'VIEW') {
+                                        $need_approve_count++;
+                                        if ($st['cstep_status'] === 'APPROVED') {
+                                            $approved_count++;
+                                        }
+                                    }
+                                }
+                            }
+                            $is_all_approved = ($need_approve_count > 0 && $approved_count === $need_approve_count);
+                            $is_completed = ($submission['cstatus'] === 'COMPLETED' || $submission['cstatus'] === 'WAITING_ADMIN' || ($submission['cstatus'] !== 'REJECTED' && $is_all_approved));
+                            
+                            $has_approved = (!empty($submission['cfile_approved']) && file_exists(FCPATH . '../' . $submission['cfile_approved']));
+                            $file_to_load = ($is_completed && $has_approved) ? $submission['cfile_approved'] : $submission['cfile_path'];
+                            $file_ext = strtolower(pathinfo($file_to_load, PATHINFO_EXTENSION));
+                            $file_url = base_url('../' . $file_to_load);
+                            $raw_file_url = base_url('../' . $submission['cfile_path']);
+                        ?>
+                        <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                            <div>
+                                <span class="badge badge-secondary">Định dạng: <?php echo strtoupper($file_ext); ?></span>
+                                <?php if ($is_completed): ?>
+                                    <span class="badge badge-success" id="badgeStampStatus" style="background:#16a34a; font-size:12px; padding:4px 8px; margin-left:6px; font-weight:600;"><i class="fa fa-certificate"></i> ĐÃ HOÀN TẤT & ĐÓNG DẤU MỘC ĐỎ</span>
+                                <?php endif; ?>
+                            </div>
+                            <a href="<?php echo $file_url; ?>" id="btnDownloadInAdmin" target="_blank" class="btn btn-sm btn-outline-primary" download><i class="fa fa-download"></i> Tải về máy</a>
+                        </div>
+
+                        <!-- Document Viewer -->
+                        <div style="background: #1e293b; border-radius: 8px; padding: 10px; min-height: 520px; display: flex; align-items: center; justify-content: center; position: relative;">
+                            <?php if ($file_ext === 'pdf'): ?>
+                                <iframe id="adminDocViewer" src="<?php echo $file_url; ?>" style="width: 100%; height: 600px; border: none; border-radius: 6px;"></iframe>
+                            <?php else: ?>
+                                <img id="adminDocImg" src="<?php echo $file_url; ?>" alt="Hồ sơ đính kèm" style="max-width: 100%; max-height: 600px; object-fit: contain; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Thao tác phê duyệt & Lịch sử -->
+            <div class="col-md-4 col-sm-12">
+                <!-- Box Thao tác thẩm định -->
+                <div class="x_panel">
+                    <div class="x_title">
+                        <h4>Thao Tác Thẩm Định [<?php echo htmlspecialchars($current_step['dept_name']); ?>]</h4>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                        <?php 
+                            $is_view_only = (isset($current_step['cpermission']) && $current_step['cpermission'] === 'VIEW');
+                        ?>
+                        <div style="margin-bottom: 15px;">
+                            <strong style="font-size: 13px;">Quyền hạn bước này:</strong>
+                            <?php if($is_view_only): ?>
+                                <span class="badge badge-secondary" style="background:#64748b; font-size:12px; padding:4px 8px; font-weight:600;"><i class="fa fa-eye"></i> CHỈ XEM HỒ SƠ</span>
+                            <?php elseif(isset($can_review) && !$can_review): ?>
+                                <span class="badge badge-secondary" style="background:#64748b; font-size:12px; padding:4px 8px; font-weight:600;"><i class="fa fa-eye"></i> CHỈ XEM TIẾN ĐỘ (KHÁC PHÒNG BAN)</span>
+                            <?php else: ?>
+                                <span class="badge badge-primary" style="background:#0284c7; font-size:12px; padding:4px 8px; font-weight:600;"><i class="fa fa-check-square-o"></i> THẨM ĐỊNH & DUYỆT</span>
+                            <?php endif; ?>
+                        </div>
+
+                        <div style="margin-bottom: 15px;">
+                            <strong style="font-size: 13px;">Trạng thái:</strong>
+                            <?php if($is_view_only): ?>
+                                <?php if($is_completed): ?>
+                                    <span class="badge badge-success" style="background:#16a34a; font-size:12px; padding:4px 8px; font-weight:600;"><i class="fa fa-check-circle"></i> ĐÃ HOÀN TẤT THẨM ĐỊNH</span>
+                                <?php else: ?>
+                                    <span class="badge badge-info" style="background:#3b82f6; color:#fff; font-size:12px; padding:4px 8px; font-weight:600;"><i class="fa fa-info-circle"></i> ĐANG THEO DÕI TIẾN ĐỘ</span>
+                                <?php endif; ?>
+                            <?php elseif($current_step['cstep_status'] == 'APPROVED'): ?>
+                                <span class="badge badge-success" style="background:#16a34a; font-size:12px; padding:4px 8px; font-weight:600;"><i class="fa fa-check"></i> ĐÃ PHÊ DUYỆT</span>
+                            <?php elseif($current_step['cstep_status'] == 'REJECTED'): ?>
+                                <span class="badge badge-danger" style="background:#dc2626; font-size:12px; padding:4px 8px; font-weight:600;"><i class="fa fa-times"></i> ĐÃ TỪ CHỐI</span>
+                            <?php else: ?>
+                                <span class="badge badge-warning" style="background:#ea580c; color:#fff; font-size:12px; padding:4px 8px; font-weight:600;"><i class="fa fa-clock-o"></i> ĐANG CHỜ THẨM ĐỊNH</span>
+                            <?php endif; ?>
+                        </div>
+
+                        <?php if($is_completed): ?>
+                            <div class="alert alert-success" style="font-size:13px; background:#ecfdf5; border-color:#a7f3d0; color:#065f46; margin-bottom:0;">
+                                <i class="fa fa-check-circle"></i> <strong>Hồ sơ đã được phê duyệt thông qua hoàn tất:</strong> Tất cả các phòng ban chuyên môn đã thẩm định đạt yêu cầu. Văn bản đính kèm đã được cấp dấu mộc đỏ xác nhận chính thức.
+                            </div>
+                        <?php elseif($is_view_only): ?>
+                            <div class="alert alert-info" style="font-size:13px; background:#f0f9ff; border-color:#bae6fd; color:#0369a1; margin-bottom:0;">
+                                <i class="fa fa-info-circle"></i> <strong>Chế độ Xem thông tin:</strong> Phòng ban của bạn được phân quyền <strong>Chỉ Xem</strong> hồ sơ này để nắm bắt tiến độ, không có quyền thao tác duyệt hoặc từ chối.
+                            </div>
+                        <?php elseif(isset($can_review) && !$can_review): ?>
+                            <div class="alert alert-warning" style="font-size:13px; background:#fffbeb; border:1px solid #fde68a; color:#92400e; margin-bottom:0;">
+                                <i class="fa fa-lock"></i> <strong>Chỉ Xem (Khác phòng ban):</strong> Bước này thuộc thẩm quyền thẩm định của <strong><?php echo htmlspecialchars($current_step['dept_name']); ?></strong>. Bạn chỉ có quyền theo dõi tiến độ và không có thẩm quyền thao tác duyệt hoặc từ chối.
+                            </div>
+                        <?php elseif($current_step['cstep_status'] == 'PENDING' && $submission['cstatus'] == 'IN_REVIEW'): ?>
+                            <form action="<?php echo base_url('index.php/do_dept_review/process_action'); ?>" method="POST" onsubmit="return confirm('Xác nhận phê duyệt thông qua bước thẩm định này?');" style="margin-bottom: 10px;">
+                                <input type="hidden" name="nid_submission" value="<?php echo $submission['nid']; ?>">
+                                <input type="hidden" name="nid_dept" value="<?php echo $current_step['nid_dept']; ?>">
+                                <input type="hidden" name="action" value="APPROVED">
+                                <button type="submit" class="btn btn-success btn-sm btn-block" style="font-weight: 600; padding: 7px 12px; font-size: 13px;">
+                                    <i class="fa fa-check"></i> PHÊ DUYỆT THÔNG QUA (APPROVE)
+                                </button>
+                            </form>
+
+                            <button type="button" class="btn btn-danger btn-sm btn-block" data-toggle="modal" data-target="#rejectModal" style="font-weight: 600; padding: 7px 12px; font-size: 13px;">
+                                <i class="fa fa-times"></i> TỪ CHỐI HỒ SƠ (REJECT)
+                            </button>
+                        <?php else: ?>
+                            <div class="alert alert-info" style="font-size:13px;">
+                                Bước thẩm định này đã được hoàn tất hoặc hồ sơ đã chuyển sang giai đoạn khác.
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+                <!-- Box Thông tin khách hàng & hồ sơ -->
+                <div class="x_panel">
+                    <div class="x_title">
+                        <h2>Thông Tin Hồ Sơ</h2>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                        <ul class="list-unstyled">
+                            <li><strong>Khách hàng:</strong> <?php echo htmlspecialchars($submission['ccustomer_name']); ?></li>
+                            <li><strong>SĐT:</strong> <?php echo htmlspecialchars($submission['ccustomer_phone']); ?></li>
+                            <li><strong>Email:</strong> <?php echo htmlspecialchars($submission['ccustomer_email']); ?></li>
+                            <li><strong>Loại hồ sơ:</strong> <?php echo htmlspecialchars($submission['doc_type_name']); ?></li>
+                            <li><strong>Tiêu đề:</strong> <?php echo htmlspecialchars($submission['ctitle']); ?></li>
+                            <li><strong>Thời gian nộp:</strong> <?php echo date('d/m/Y H:i', strtotime($submission['ddate_submit'])); ?></li>
+                            <?php if(!empty($submission['cnote'])): ?>
+                                <li style="margin-top:8px;"><strong>Ghi chú khách:</strong> <em><?php echo nl2br(htmlspecialchars($submission['cnote'])); ?></em></li>
+                            <?php endif; ?>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Box Tiến độ các phòng ban khác -->
+                <div class="x_panel">
+                    <div class="x_title">
+                        <h2>Tiến Độ Các Phòng Ban</h2>
+                        <div class="clearfix"></div>
+                    </div>
+                    <div class="x_content">
+                        <table class="table table-sm">
+                            <?php foreach($all_steps as $st): ?>
+                                <tr>
+                                    <td style="vertical-align: middle; padding: 8px 6px;">
+                                        <strong><?php echo htmlspecialchars($st['dept_name']); ?></strong>
+                                        <?php if(isset($st['cpermission']) && $st['cpermission'] === 'VIEW'): ?>
+                                            <span class="badge badge-secondary" style="font-size:10px; background:#64748b; margin-left:4px;">Chỉ xem</span>
+                                        <?php endif; ?>
+
+                                        <?php 
+                                            // Tên nhân viên thao tác duyệt / từ chối
+                                            $reviewer = !empty($st['staff_name']) ? $st['staff_name'] : (!empty($st['staff_username']) ? $st['staff_username'] : (!empty($st['nid_staff_user']) ? 'NV #' . $st['nid_staff_user'] : 'Quản trị viên'));
+                                            $action_time = !empty($st['dtime_action']) ? date('d/m/Y H:i', strtotime($st['dtime_action'])) : '';
+                                        ?>
+
+                                        <?php if($st['cstep_status'] == 'APPROVED'): ?>
+                                            <div style="font-size: 11.5px; color: #475569; margin-top: 3px; line-height: 1.4;">
+                                                <i class="fa fa-user" style="color: #16a34a;"></i> Người duyệt: <strong style="color: #0f172a;"><?php echo htmlspecialchars($reviewer); ?></strong>
+                                                <?php if(!empty($action_time)): ?>
+                                                    <span style="color: #94a3b8; font-size: 11px; margin-left: 3px;">• <?php echo $action_time; ?></span>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php elseif($st['cstep_status'] == 'REJECTED'): ?>
+                                            <div style="font-size: 11.5px; color: #dc2626; margin-top: 3px; line-height: 1.4;">
+                                                <i class="fa fa-user" style="color: #dc2626;"></i> Từ chối bởi: <strong style="color: #991b1b;"><?php echo htmlspecialchars($reviewer); ?></strong>
+                                                <?php if(!empty($action_time)): ?>
+                                                    <span style="color: #94a3b8; font-size: 11px; margin-left: 3px;">• <?php echo $action_time; ?></span>
+                                                <?php endif; ?>
+                                                <?php if(!empty($st['creason_note'])): ?>
+                                                    <div style="font-style: italic; color: #b91c1c; font-size: 11px; margin-top: 2px;">Lý do: <?php echo htmlspecialchars($st['creason_note']); ?></div>
+                                                <?php endif; ?>
+                                            </div>
+                                        <?php elseif(isset($st['cpermission']) && $st['cpermission'] === 'VIEW'): ?>
+                                            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+                                                <i class="fa fa-eye"></i> Chỉ theo dõi tiến độ
+                                            </div>
+                                        <?php else: ?>
+                                            <div style="font-size: 11px; color: #ea580c; margin-top: 2px;">
+                                                <i class="fa fa-clock-o"></i> Đang chờ phòng ban thẩm định
+                                            </div>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td style="text-align: right; vertical-align: middle; white-space: nowrap; padding: 8px 6px;">
+                                        <?php if(isset($st['cpermission']) && $st['cpermission'] === 'VIEW'): ?>
+                                            <span style="color:#64748b; font-weight:600;"><i class="fa fa-eye"></i> Theo dõi</span>
+                                        <?php elseif($st['cstep_status'] == 'APPROVED'): ?>
+                                            <span style="color:#16a34a; font-weight:700;"><i class="fa fa-check"></i> Đã duyệt</span>
+                                        <?php elseif($st['cstep_status'] == 'REJECTED'): ?>
+                                            <span style="color:#dc2626; font-weight:700;"><i class="fa fa-times"></i> Từ chối</span>
+                                        <?php else: ?>
+                                            <span style="color:#ea580c; font-weight:700;"><i class="fa fa-clock-o"></i> Chờ duyệt</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Từ Chối Hồ Sơ Bắt Buộc Nhập Lý Do -->
+<div class="modal fade" id="rejectModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <form action="<?php echo base_url('index.php/do_dept_review/process_action'); ?>" method="POST" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" style="color:#dc2626; font-weight:800;"><i class="fa fa-times-circle"></i> TỪ CHỐI THẨM ĐỊNH HỒ SƠ</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="nid_submission" value="<?php echo $submission['nid']; ?>">
+                <input type="hidden" name="nid_dept" value="<?php echo $current_step['nid_dept']; ?>">
+                <input type="hidden" name="action" value="REJECTED">
+
+                <div class="form-group">
+                    <label style="font-weight:700; color:#0f172a;">Lý do từ chối thẩm định <span class="text-danger">* (Bắt buộc)</span>:</label>
+                    <textarea name="reason_note" class="form-control" rows="4" placeholder="Nhập chi tiết các điểm chưa đạt yêu cầu để khách hàng sửa đổi bổ sung..." required></textarea>
+                </div>
+                <div class="alert alert-warning" style="font-size:12.5px;">
+                    <i class="fa fa-exclamation-triangle"></i> <strong>Lưu ý:</strong> Khi bạn từ chối, toàn bộ hồ sơ sẽ ngay lập tức chuyển trạng thái <strong>REJECTED</strong> và gửi email thông báo lý do đến khách hàng.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Hủy bỏ</button>
+                <button type="submit" class="btn btn-danger" style="font-weight:700;"><i class="fa fa-times"></i> Xác nhận Từ chối hồ sơ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<?php if ($is_completed): ?>
+<!-- SCRIPT TỰ ĐỘNG ĐÓNG DẤU MỘC ĐỎ "ĐÃ DUYỆT" CHO TRÌNH XEM TÀI LIỆU CMS ADMIN -->
+<script type="text/javascript">
+/**
+ * Tạo con dấu mộc đỏ "ĐÃ DUYỆT" bằng HTML5 Canvas với độ phân giải cao (Retina/Print 300DPI)
+ */
+function generateRedStampDataUrl(docCode, approvedDate) {
+    var canvas = document.createElement('canvas');
+    var dpr = 2;
+    var stampW = 260;
+    var stampH = 110;
+    canvas.width = stampW * dpr;
+    canvas.height = stampH * dpr;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    // 1. Nền mộc nhạt mờ tự nhiên
+    ctx.fillStyle = 'rgba(254, 242, 242, 0.55)';
+    drawStampRoundRect(ctx, 4, 4, stampW - 8, stampH - 8, 8, true, false);
+
+    // 2. Viền ngoài đôi
+    ctx.strokeStyle = '#c5221f';
+    ctx.lineWidth = 2.8;
+    drawStampRoundRect(ctx, 4, 4, stampW - 8, stampH - 8, 8, false, true);
+
+    // Viền trong nét thanh
+    ctx.strokeStyle = '#c5221f';
+    ctx.lineWidth = 1.1;
+    drawStampRoundRect(ctx, 9, 9, stampW - 18, stampH - 18, 5, false, true);
+
+    // 3. Tiêu đề đơn vị: BAN QUẢN LÝ PICO PLAZA
+    ctx.fillStyle = '#c5221f';
+    ctx.font = 'bold 11px Arial, "Segoe UI", Tahoma, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('BAN QUẢN LÝ PICO PLAZA', stampW / 2, 25);
+
+    // Đường kẻ phân cách trên
+    ctx.strokeStyle = '#c5221f';
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(20, 36);
+    ctx.lineTo(stampW - 20, 36);
+    ctx.stroke();
+
+    // 4. Chữ chính: ★ ĐÃ DUYỆT ★ (Dùng font bold chuẩn + stroke mảnh để chữ Ệ đều nét 100%)
+    ctx.font = 'bold 21px Arial, "Segoe UI", Tahoma, sans-serif';
+    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = '#c5221f';
+    ctx.strokeText('★ ĐÃ DUYỆT ★', stampW / 2, 58);
+    ctx.fillText('★ ĐÃ DUYỆT ★', stampW / 2, 58);
+
+    // Đường kẻ phân cách dưới
+    ctx.beginPath();
+    ctx.moveTo(20, 78);
+    ctx.lineTo(stampW - 20, 78);
+    ctx.stroke();
+
+    // 5. Dòng mã hồ sơ & Ngày duyệt
+    var dateStr = approvedDate || '<?php echo date("d/m/Y"); ?>';
+    var codeStr = docCode ? ('#' + docCode + '  •  ') : '';
+    ctx.font = 'bold 9.5px Arial, "Segoe UI", Tahoma, sans-serif';
+    ctx.fillText(codeStr + 'NGÀY: ' + dateStr, stampW / 2, 91);
+
+    return canvas.toDataURL('image/png');
+}
+
+function drawStampRoundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y + height, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (fill) ctx.fill();
+    if (stroke) ctx.stroke();
+}
+
+function dataUrlToArrayBuffer(dataUrl) {
+    var binary = atob(dataUrl.split(',')[1]);
+    var len = binary.length;
+    var bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes.buffer;
+}
+
+/**
+ * Đóng dấu mộc đỏ lên file PDF
+ */
+async function stampPdfDocument(pdfArrayBuffer, docCode, approvedDate) {
+    var PDFDocument = PDFLib.PDFDocument;
+    var degrees = PDFLib.degrees;
+    var pdfDoc = await PDFDocument.load(pdfArrayBuffer, { ignoreEncryption: true });
+
+    var stampDataUrl = generateRedStampDataUrl(docCode, approvedDate);
+    var stampPngBytes = dataUrlToArrayBuffer(stampDataUrl);
+    var stampImage = await pdfDoc.embedPng(stampPngBytes);
+
+    var pages = pdfDoc.getPages();
+    if (pages.length > 0) {
+        var firstPage = pages[0];
+        var size = firstPage.getSize();
+        var width = size.width;
+        var height = size.height;
+
+        // Tọa độ chuẩn góc trên bên phải, cách mép trên 8pt để không đè tiêu đề
+        var stampW = 132;
+        var stampH = 50;
+        var marginX = 16;
+        var marginY = 8;
+
+        var rotation = 0;
+        try {
+            rotation = firstPage.getRotation().angle || 0;
+        } catch (e) {
+            rotation = 0;
+        }
+
+        var posX, posY, rotAngle;
+        if (rotation === 90) {
+            posX = width - stampH - marginY;
+            posY = marginX;
+            rotAngle = 90 - 1.5;
+        } else if (rotation === 180) {
+            posX = marginX;
+            posY = marginY;
+            rotAngle = 180 - 1.5;
+        } else if (rotation === 270) {
+            posX = marginY;
+            posY = height - stampW - marginX;
+            rotAngle = 270 - 1.5;
+        } else {
+            posX = width - stampW - marginX;
+            posY = height - stampH - marginY;
+            rotAngle = -1.5;
+        }
+
+        firstPage.drawImage(stampImage, {
+            x: posX,
+            y: posY,
+            width: stampW,
+            height: stampH,
+            opacity: 0.95,
+            rotate: degrees(rotAngle)
+        });
+    }
+
+    return await pdfDoc.save();
+}
+
+/**
+ * Đóng dấu mộc đỏ lên file ảnh (JPG/PNG)
+ */
+function stampImageDocument(imgUrl, docCode, approvedDate, callback) {
+    var img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = function() {
+        var canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        var ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0);
+
+        var stampImg = new Image();
+        stampImg.onload = function() {
+            var stampW = Math.max(180, Math.min(canvas.width * 0.22, 340));
+            var stampH = stampW * (110 / 260);
+            var marginX = canvas.width * 0.02;
+            var marginY = canvas.height * 0.012;
+            var posX = canvas.width - stampW - marginX;
+            var posY = marginY;
+
+            ctx.save();
+            ctx.translate(posX + stampW / 2, posY + stampH / 2);
+            ctx.rotate(-1.5 * Math.PI / 180);
+            ctx.globalAlpha = 0.95;
+            ctx.drawImage(stampImg, -stampW / 2, -stampH / 2, stampW, stampH);
+            ctx.restore();
+
+            canvas.toBlob(function(blob) {
+                callback(blob);
+            }, 'image/jpeg', 0.95);
+        };
+        stampImg.src = generateRedStampDataUrl(docCode, approvedDate);
+    };
+    img.onerror = function() {
+        callback(null);
+    };
+    img.src = imgUrl;
+}
+
+// Tự động kích hoạt đóng dấu và nạp ngay vào Document Viewer khi trang load
+(async function() {
+    var hasApprovedServer = <?php echo $has_approved ? 'true' : 'false'; ?>;
+    var rawFileUrl = '<?php echo $raw_file_url; ?>';
+    var docCode = '<?php echo htmlspecialchars($submission["ccode"]); ?>';
+    var approvedDate = '<?php echo !empty($submission["ddate_completed"]) ? date("d/m/Y", strtotime($submission["ddate_completed"])) : date("d/m/Y"); ?>';
+    var saveUrl = '<?php echo base_url("index.php/do_dept_review/ajax_save_approved_file"); ?>';
+    var isPdf = rawFileUrl.toLowerCase().indexOf('.pdf') !== -1;
+    var ext = isPdf ? 'pdf' : (rawFileUrl.toLowerCase().indexOf('.png') !== -1 ? 'png' : 'jpg');
+    var downloadFilename = 'Ho_so_xac_nhan_' + docCode + '.' + ext;
+
+    // Nếu trên máy chủ đã có sẵn file đóng dấu hoàn tất, trình duyệt đã nạp trực tiếp file này
+    if (hasApprovedServer) {
+        return;
+    }
+
+    try {
+        var res = await fetch(rawFileUrl);
+        if (!res.ok) return;
+
+        var finalBlob = null;
+        if (isPdf) {
+            if (typeof PDFLib === 'undefined') return;
+            var buffer = await res.arrayBuffer();
+            var stampedPdfBytes = await stampPdfDocument(buffer, docCode, approvedDate);
+            finalBlob = new Blob([stampedPdfBytes], { type: 'application/pdf' });
+        } else {
+            finalBlob = await new Promise(function(resolve) {
+                stampImageDocument(rawFileUrl, docCode, approvedDate, function(blob) {
+                    resolve(blob);
+                });
+            });
+        }
+
+        if (finalBlob) {
+            var stampedBlobUrl = URL.createObjectURL(finalBlob);
+
+            // Nạp ngay file đã đóng dấu vào iframe hoặc img viewer
+            var viewer = document.getElementById('adminDocViewer');
+            if (viewer && isPdf) {
+                viewer.src = stampedBlobUrl;
+            }
+            var docImg = document.getElementById('adminDocImg');
+            if (docImg && !isPdf) {
+                docImg.src = stampedBlobUrl;
+            }
+
+            // Cập nhật nút Tải về máy tải file có dấu
+            var btnDownload = document.getElementById('btnDownloadInAdmin');
+            if (btnDownload) {
+                btnDownload.href = stampedBlobUrl;
+                btnDownload.download = downloadFilename;
+            }
+
+            // Tự động lưu ngầm bản có dấu lên server nếu chưa có
+            if (saveUrl) {
+                try {
+                    var formData = new FormData();
+                    formData.append('code', docCode);
+                    formData.append('stamped_file', finalBlob, downloadFilename);
+                    fetch(saveUrl, {
+                        method: 'POST',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                        body: formData
+                    }).catch(function(err) {});
+                } catch (ePost) {}
+            }
+        }
+    } catch (e) {
+        console.error('[ADMIN STAMP ERROR]', e);
+    }
+})();
+</script>
+<?php endif; ?>
+
+<?php
+	$this->load->view('modules/mod_footer');
+	$this->load->view('footer');
+?>
