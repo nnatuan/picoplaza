@@ -289,7 +289,6 @@ if (!function_exists('workflow_dept_review')) {
                     $msg = "<b>PICOSAIGON THÔNG BÁO</b>\n";
                     $msg .= "<b>HỒ SƠ ĐÃ ĐƯỢC DUYỆT HOÀN TẤT</b>\n\n";
                     $msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub_info['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
-                    $msg .= "👤 <b>Người nộp:</b> " . htmlspecialchars($cust_name, ENT_QUOTES, 'UTF-8') . (!empty($sub_info['ccustomer_phone']) ? " (" . htmlspecialchars($sub_info['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
                     $msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($cust_name, ENT_QUOTES, 'UTF-8') . (!empty($sub_info['ccustomer_phone']) ? " (" . htmlspecialchars($sub_info['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
                     $msg .= "----------------------------------------\n";
                     $msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub_code, ENT_QUOTES, 'UTF-8') . "\n";
@@ -682,7 +681,6 @@ if (!function_exists('workflow_notify_new_submission')) {
                 $dept_msg = "<b>PICOSAIGON THÔNG BÁO</b>\n";
                 $dept_msg .= "<b>HỒ SƠ MỚI CẦN THẨM ĐỊNH</b>\n\n";
                 $dept_msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
-                $dept_msg .= "👤 <b>Người nộp:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . (!empty($sub['ccustomer_phone']) ? " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
                 $dept_msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . (!empty($sub['ccustomer_phone']) ? " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
                 $dept_msg .= "----------------------------------------\n";
                 $dept_msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
@@ -717,7 +715,6 @@ if (!function_exists('workflow_notify_new_submission')) {
                 $admin_msg = "<b>PICOSAIGON THÔNG BÁO</b>\n";
                 $admin_msg .= "<b>HỒ SƠ MỚI CẦN THẨM ĐỊNH</b>\n\n";
                 $admin_msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
-                $admin_msg .= "👤 <b>Người nộp:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . (!empty($sub['ccustomer_phone']) ? " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
                 $admin_msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . (!empty($sub['ccustomer_phone']) ? " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
                 $admin_msg .= "----------------------------------------\n";
                 $admin_msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
@@ -819,7 +816,6 @@ if (!function_exists('workflow_notify_all_depts_completed')) {
             $msg = "<b>PICOSAIGON THÔNG BÁO</b>\n";
             $msg .= "<b>HỒ SƠ ĐÃ ĐƯỢC DUYỆT HOÀN TẤT</b>\n\n";
             $msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
-            $msg .= "👤 <b>Người nộp:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . (!empty($sub['ccustomer_phone']) ? " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
             $msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . (!empty($sub['ccustomer_phone']) ? " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
             $msg .= "----------------------------------------\n";
             $msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
@@ -876,7 +872,6 @@ if (!function_exists('workflow_notify_admin_waiting')) {
             $msg = "<b>PICOSAIGON THÔNG BÁO</b>\n";
             $msg .= "<b>HỒ SƠ ĐỦ ĐIỀU KIỆN CHỜ DUYỆT</b>\n\n";
             $msg .= "📌 <b>Tiêu đề:</b> " . htmlspecialchars($sub['ctitle'], ENT_QUOTES, 'UTF-8') . "\n";
-            $msg .= "👤 <b>Người nộp:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . (!empty($sub['ccustomer_phone']) ? " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
             $msg .= "👤 <b>Khách hàng:</b> " . htmlspecialchars($sub['ccustomer_name'], ENT_QUOTES, 'UTF-8') . (!empty($sub['ccustomer_phone']) ? " (" . htmlspecialchars($sub['ccustomer_phone'], ENT_QUOTES, 'UTF-8') . ")" : "") . "\n";
             $msg .= "----------------------------------------\n";
             $msg .= "🏷️ <b>Mã hồ sơ:</b> #" . htmlspecialchars($sub['ccode'], ENT_QUOTES, 'UTF-8') . "\n";
